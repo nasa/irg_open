@@ -1,0 +1,6 @@
+add_subdirectory(IRGGlobalShaderParamPlugin)
+add_subdirectory(IRGIrradianceMapPlugin)
+add_subdirectory(IRGNearFarClipPlugin)
+add_subdirectory(IRGReloadShadersPlugin)
+add_subdirectory(IRGShadowParametersPlugins)
+
