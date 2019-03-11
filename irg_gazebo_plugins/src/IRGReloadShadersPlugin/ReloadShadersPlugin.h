@@ -30,6 +30,8 @@ namespace gazebo {
     event::ConnectionPtr m_updateConnection;
 
     common::Timer m_timer;
+
+    time_t mCurrentTime;
   };
 
 }

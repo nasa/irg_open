@@ -14,6 +14,7 @@ using namespace std;
 using namespace gazebo;
 using namespace Ogre;
 
+#define UPDATE_RATE 1.0
 #define OGRE_GREATER_THAN_1_8 !(OGRE_VERSION < ((1 << 16) | (9 << 8) | 0))
 
 GZ_REGISTER_VISUAL_PLUGIN(ReloadShadersPlugin)
@@ -39,12 +40,14 @@ void ReloadShadersPlugin::Load(rendering::VisualPtr _sensor, sdf::ElementPtr _sd
 void ReloadShadersPlugin::OnUpdate()
 {
   // Only continue if a second has elapsed
-  if (m_timer.GetElapsed().Double() < 1.0)
+  if (m_timer.GetElapsed().Double() < UPDATE_RATE)
   {
     return;
   }
   m_timer.Reset();
   m_timer.Start();
+
+  mCurrentTime = time(NULL);
 
   // reload all vertex and fragment programs for every material
   Ogre::ResourceManager::ResourceMapIterator it = Ogre::MaterialManager::getSingleton().getResourceIterator();
@@ -60,27 +63,6 @@ void ReloadShadersPlugin::OnUpdate()
 #else 
     MaterialPtr m = r;
 #endif
-
-    // HACK: materials starting with these strings cause assertion:
-    // /OgreMain/src/OgreGpuProgramParams.cpp:1099: void Ogre::GpuProgramParameters::_writeRawConstants(size_t, const float*, size_t): Assertion `physicalIndex + count <= mFloatConstants.size()' failed
-    // There is some suggestion this is an Ogre bug: https://forums.ogre3d.org/viewtopic.php?p=222740
-    // It would be better to find a general-purpose fix or workaround.
-    if (StringUtil::startsWith(m->getName(), "mobile_base"))
-    {
-      continue;
-    }
-    if (StringUtil::startsWith(m->getName(), "fake_sun"))
-    {
-      continue;
-    }
-    if (StringUtil::startsWith(m->getName(), "sun_sphere"))
-    {
-      continue;
-    }
-    if (StringUtil::startsWith(m->getName(), "global_shader_param_loader"))
-    {
-      continue;
-    }
 
     ReloadShaders(m);
   }
@@ -132,21 +114,34 @@ void ReloadShadersPlugin::ReloadShaders(Ogre::MaterialPtr m)
         continue;
       }
 
-      // reload shaders
-      vert->reload();
-      frag->reload();
+      // Reload shaders if they have changed
+      bool sendToGPU = false;
+      time_t time = ResourceGroupManager::getSingletonPtr()->resourceModifiedTime(vert->getGroup(), vert->getSourceFile());
+      if (frag->isReloadable() && difftime(mCurrentTime, time) < UPDATE_RATE * 2.0 )
+      {
+        vert->reload();
+        sendToGPU = true;
+      }
+      time = ResourceGroupManager::getSingletonPtr()->resourceModifiedTime(frag->getGroup(), frag->getSourceFile());
+      if (frag->isReloadable() && difftime(mCurrentTime, time) < UPDATE_RATE * 2.0 )
+      {
+        frag->reload();
+        sendToGPU = true;
+      }
 
       // Ensure that shader gets sent to your GPU
       // https://forums.ogre3d.org/viewtopic.php?t=82115#p519782
-      String combinedName = "Vertex Program:" + vert->getName()
-        + " Fragment Program:" + frag->getName();
-      if (GpuProgramManager::getSingleton().isMicrocodeAvailableInCache(combinedName))
+      if (sendToGPU)
       {
+        String combinedName = "Vertex Program:" + vert->getName() + " Fragment Program:" + frag->getName();
+        if (GpuProgramManager::getSingleton().isMicrocodeAvailableInCache(combinedName))
+        {
 #if OGRE_GREATER_THAN_1_8
-        GpuProgramManager::getSingleton().removeMicrocodeFromCache(combinedName);
+          GpuProgramManager::getSingleton().removeMicrocodeFromCache(combinedName);
 #else
-        gzerr << "ReloadShadersPlugin requires Ogre 1.9... this plugin should not be enabled\n";
+          gzerr << "ReloadShadersPlugin requires Ogre 1.9... this plugin should not be enabled\n";
 #endif
+        }
       }
     }
   }
