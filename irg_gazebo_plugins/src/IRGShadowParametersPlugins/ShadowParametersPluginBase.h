@@ -11,17 +11,26 @@
 
 namespace gazebo {
 
-  // Base class contains meat of the code
-  class ShadowParametersPluginBase
-  {
-  public: 
-    ShadowParametersPluginBase(){}
-    ~ShadowParametersPluginBase(){}
+// Base class contains meat of the code
+class ShadowParametersPluginBase
+{
+public:
+  ShadowParametersPluginBase();
+  ~ShadowParametersPluginBase(){}
 
-    virtual std::string GetClassName() = 0;
+  virtual std::string GetClassName() = 0;
 
-    void LoadBase(sdf::ElementPtr _sdf);
-  };
+  void LoadBase(sdf::ElementPtr _sdf);
+
+  void onUpdate();
+
+protected:
+  double m_constant_bias;
+  double m_slope_scale_bias;
+
+  // Connection to the update event
+  event::ConnectionPtr m_update_connection;
+};
 
 }
 
