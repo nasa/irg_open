@@ -1,0 +1,2 @@
+export GAZEBO_RESOURCE_PATH="$(catkin_find --first-only irg_gazebo_plugins materials/scripts):${GAZEBO_RESOURCE_PATH}"
+

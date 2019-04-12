@@ -35,7 +35,10 @@ else()
   include_directories(SYSTEM "${QT_QTCORE_INCLUDE_DIR}")
 endif()
 
-
+catkin_add_env_hooks(
+  65.irg_gazebo_plugins
+  SHELLS sh DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/env-hooks
+)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)

@@ -1,3 +1,4 @@
+add_subdirectory(IRGCameraNoisePlugin)
 add_subdirectory(IRGGlobalShaderParamPlugin)
 add_subdirectory(IRGIrradianceMapPlugin)
 add_subdirectory(IRGNearFarClipPlugin)

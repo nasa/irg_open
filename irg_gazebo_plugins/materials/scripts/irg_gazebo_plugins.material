@@ -1,0 +1,38 @@
+// This file is an adaptation of Gazebo's gazebo.material, licensed under the
+// Apache License, Version 2.0.
+vertex_program IRGCameraNoisePluginVS glsl
+{
+  source IRGCameraNoisePlugin.vert
+}
+
+fragment_program IRGCameraNoisePluginFS glsl
+{
+  source IRGCameraNoisePlugin.frag
+  default_params
+  {
+    param_named RT int 0
+    #param_named mean float 0.0
+    #param_named stddev float 1.0
+    param_named offsets float3 0.0 0.0 0.0
+  }
+}
+
+material IRGCameraNoisePlugin
+{
+  technique
+  {
+    pass
+    {
+      vertex_program_ref IRGCameraNoisePluginVS { }
+      fragment_program_ref IRGCameraNoisePluginFS { }
+
+      texture_unit RT
+      {
+        tex_coord_set 0
+        tex_address_mode clamp
+        filtering linear linear linear
+      }
+    }
+  }
+}
+
