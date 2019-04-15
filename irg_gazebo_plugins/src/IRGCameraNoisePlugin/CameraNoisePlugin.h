@@ -11,21 +11,21 @@
 #include <gazebo/common/Plugin.hh>
 
 
-namespace gazebo {
+namespace irg {
 
-  class CameraNoisePlugin : public SensorPlugin
-  {
-  public: 
-    CameraNoisePlugin(){}
-    ~CameraNoisePlugin(){}
+class CameraNoisePlugin : public gazebo::SensorPlugin
+{
+public:
+  CameraNoisePlugin(){}
+  //~CameraNoisePlugin(){}
 
-    virtual void Load(sensors::SensorPtr sensor, sdf::ElementPtr sdf) override;
+  virtual void Load(gazebo::sensors::SensorPtr sensor, sdf::ElementPtr sdf) override;
 
-  private:
-    void setupCompositor(gazebo::rendering::CameraPtr camera);
+private:
+  void setupCompositor(gazebo::rendering::CameraPtr camera);
 
-    boost::shared_ptr<NoiseCompositorListener> m_compositor_listener;
-  };
+  std::shared_ptr<NoiseCompositorListener> m_compositor_listener;
+};
 
 }
 

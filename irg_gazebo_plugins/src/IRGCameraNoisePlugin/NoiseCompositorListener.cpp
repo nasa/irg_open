@@ -7,6 +7,9 @@
 #include <gazebo/common/Assert.hh>
 
 
+using namespace irg;
+
+
 void NoiseCompositorListener::notifyMaterialRender(unsigned int pass_id,
                                                    Ogre::MaterialPtr& mat)
 {

@@ -10,6 +10,7 @@
 #include <gazebo/rendering/ogre_gazebo.h>
 
 
+using namespace irg;
 using namespace gazebo;
 using namespace gazebo::rendering;
 using namespace Ogre;
