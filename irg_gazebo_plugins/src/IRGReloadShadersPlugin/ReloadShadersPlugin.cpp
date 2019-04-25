@@ -1,8 +1,8 @@
-/*******************************************************************************
- * Copyright (c) 2018 United States Government as represented by the 
- * Administrator of the National Aeronautics and Space Administration. 
- * All rights reserved.
- ******************************************************************************/
+// __BEGIN_LICENSE__
+// Copyright (c) 2018-2019, United States Government as represented by the
+// Administrator of the National Aeronautics and Space Administration. All
+// rights reserved.
+// __END_LICENSE__
 #include "ReloadShadersPlugin.h"
 
 #include <gazebo/rendering/RenderingIface.hh>
@@ -10,6 +10,7 @@
 #include <gazebo/rendering/Heightmap.hh>
 
 
+using namespace irg;
 using namespace std;
 using namespace gazebo;
 using namespace Ogre;

@@ -15,7 +15,7 @@
 #include <OGRE/OgreCamera.h>
 #include <OGRE/OgreTexture.h>
 
-namespace gazebo {
+namespace irg {
 
 /**
  * @brief The IrradianceMapPlugin class
@@ -26,13 +26,13 @@ namespace gazebo {
  * scene. This class renders the environment to a cubemap but lets another class
  * filter that cubemap to produce the final irradiance environment cubemap.
  */
-class IrradianceMapPlugin : public VisualPlugin
+class IrradianceMapPlugin : public gazebo::VisualPlugin
 {
 public:
   IrradianceMapPlugin();
   ~IrradianceMapPlugin();
 
-  virtual void Load(rendering::VisualPtr visual, sdf::ElementPtr element) override;
+  virtual void Load(gazebo::rendering::VisualPtr visual, sdf::ElementPtr element) override;
 
   void onUpdate();
 
@@ -42,12 +42,12 @@ private:
   // A unique index to use in "global" Ogre resources, such as texture names
   int m_unique_index;
 
-  common::Timer m_timer;
+  gazebo::common::Timer m_timer;
 
   Ogre::String m_texture_unit_name;
 
   // Connection to the update event
-  event::ConnectionPtr m_update_connection;
+  gazebo::event::ConnectionPtr m_update_connection;
 
   Ogre::TexturePtr m_texture;
 

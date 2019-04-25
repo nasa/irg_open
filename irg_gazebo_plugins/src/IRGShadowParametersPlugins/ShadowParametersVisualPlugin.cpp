@@ -1,12 +1,12 @@
-/*******************************************************************************
- * Copyright (c) 2018 United States Government as represented by the 
- * Administrator of the National Aeronautics and Space Administration. 
- * All rights reserved.
- ******************************************************************************/
+// __BEGIN_LICENSE__
+// Copyright (c) 2018-2019, United States Government as represented by the
+// Administrator of the National Aeronautics and Space Administration. All
+// rights reserved.
+// __END_LICENSE__
 #include "ShadowParametersVisualPlugin.h"
 
+using namespace irg;
 using namespace gazebo;
-using namespace gazebo::rendering;
 GZ_REGISTER_VISUAL_PLUGIN(ShadowParametersVisualPlugin)
 
 

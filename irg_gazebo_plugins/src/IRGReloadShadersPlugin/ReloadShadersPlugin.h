@@ -1,8 +1,8 @@
-/*******************************************************************************
- * Copyright (c) 2018 United States Government as represented by the 
- * Administrator of the National Aeronautics and Space Administration. 
- * All rights reserved.
- ******************************************************************************/
+// __BEGIN_LICENSE__
+// Copyright (c) 2018-2019, United States Government as represented by the
+// Administrator of the National Aeronautics and Space Administration. All
+// rights reserved.
+// __END_LICENSE__
 #ifndef ReloadShadersPlugin_h
 #define ReloadShadersPlugin_h
 
@@ -11,28 +11,28 @@
 #include <gazebo/common/common.hh>
 #include <OGRE/OgreMaterial.h>
 
-namespace gazebo {
+namespace irg {
 
-  class ReloadShadersPlugin : public VisualPlugin
-  {
-  public: 
-    ReloadShadersPlugin();
-    ~ReloadShadersPlugin();
+class ReloadShadersPlugin : public gazebo::VisualPlugin
+{
+public:
+  ReloadShadersPlugin();
+  ~ReloadShadersPlugin();
 
-    virtual void Load(rendering::VisualPtr _sensor, sdf::ElementPtr _sdf);
+  virtual void Load(gazebo::rendering::VisualPtr _sensor, sdf::ElementPtr _sdf);
 
-    void OnUpdate();
+  void OnUpdate();
 
-  private:
-    void ReloadShaders(Ogre::MaterialPtr m);
+private:
+  void ReloadShaders(Ogre::MaterialPtr m);
 
-    // Connection to the update event
-    event::ConnectionPtr m_updateConnection;
+  // Connection to the update event
+  gazebo::event::ConnectionPtr m_updateConnection;
 
-    common::Timer m_timer;
+  gazebo::common::Timer m_timer;
 
-    time_t mCurrentTime;
-  };
+  time_t mCurrentTime;
+};
 
 }
 

@@ -14,6 +14,7 @@
 #include <OGRE/OgreSceneManager.h>
 
 
+using namespace irg;
 using namespace std;
 using namespace Ogre;
 

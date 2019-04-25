@@ -2,6 +2,7 @@ set(TARGET_NAME IRGIrradianceMapPlugin)
 
 set (HEADERS
   IrradianceMapPlugin.h
+  CubemapFilter.h
 )
 
 set (SOURCES

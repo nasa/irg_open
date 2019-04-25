@@ -14,6 +14,7 @@
 #include <OGRE/RenderSystems/GL/OgreGLTexture.h>
 
 
+using namespace irg;
 using namespace std;
 using namespace gazebo;
 using namespace Ogre;

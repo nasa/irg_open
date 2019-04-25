@@ -12,6 +12,8 @@
 #include <OGRE/OgreTexture.h>
 
 
+namespace irg {
+
 /**
  * @brief The CubemapFilter class
  * Filter a source cubemap to produce an irradiance environment cubemap.
@@ -85,6 +87,8 @@ private:
   Ogre::Camera* m_cameras[6];
   Ogre::Viewport* m_viewports[6];
 };
+
+}
 
 
 #endif
