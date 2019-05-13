@@ -2,8 +2,8 @@ compositor IRGCameraNoisePlugin
 {
   technique
   {
-    // Temporary texture
-    texture rt target_width target_height PF_FLOAT32_RGB
+    // Using a 16-bit temporary texture to simulate a camera sensor.
+    texture rt target_width target_height PF_SHORT_RGB
 
     target rt
     {
