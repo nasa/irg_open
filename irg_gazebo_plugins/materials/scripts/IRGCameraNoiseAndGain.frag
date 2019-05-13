@@ -53,6 +53,15 @@ uniform vec3 offsets;
 // Standard deviation of the Gaussian distribution that we want to sample from.
 //uniform float stddev;
 
+// Read noise coefficient
+uniform float read_noise;
+
+// Shot noise coefficient
+uniform float shot_noise;
+
+// This is the simplest possible simulation of camera sensor gain (or ISO)
+uniform float gain;
+
 
 #define PI 3.14159265358979323846264
 
@@ -95,7 +104,7 @@ vec4 gaussrand(float I, vec2 co)
   //Z = Z * stddev + mean;
 
   // Larry's noise formula
-  float stddev = sqrt(0.64 + 0.09 * I * 4095.0) / 4095.0;
+  float stddev = sqrt(read_noise + shot_noise * I * 4095.0) / 4095.0;
   Z = Z * stddev;
 
   // Return it as a vec4, to be added to the input ("true") color.
@@ -104,9 +113,13 @@ vec4 gaussrand(float I, vec2 co)
 
 void main()
 {
-  vec4 baseColor = texture2D(RT, gl_TexCoord[0].xy);
+  vec4 color = texture2D(RT, gl_TexCoord[0].xy);
 
-  // Add the sampled noise to the input color and clamp the result to a valid range.
-  // The red channel is used for image intensity because our simulation is all grayscale.
-  gl_FragColor = clamp(baseColor + gaussrand(baseColor.r, gl_TexCoord[0].xy), 0.0, 1.0);
+  // Add the luminance noise to the input color
+  float gray = dot(color.rgb, vec3(0.299, 0.587, 0.114));
+  color.rgb += vec3(gaussrand(gray, gl_TexCoord[0].xy));
+
+  // Multiply by sensor gain
+  gl_FragColor = vec4(color.rgb * vec3(gain), color.a);
 }
+
