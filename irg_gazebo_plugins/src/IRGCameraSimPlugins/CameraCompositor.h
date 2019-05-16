@@ -3,8 +3,8 @@
 // Administrator of the National Aeronautics and Space Administration. All
 // rights reserved.
 // __END_LICENSE__
-#ifndef CameraSimBase_h
-#define CameraSimBase_h
+#ifndef CameraCompositor_h
+#define CameraCompositor_h
 
 
 #include "CameraCompositorListener.h"
@@ -13,18 +13,18 @@
 
 namespace irg {
 
-class CameraSimBase
+class CameraCompositor
 {
 public:
-  CameraSimBase(){}
+  CameraCompositor(){}
 
-protected:
   void setupCompositor(sdf::ElementPtr sdf, gazebo::rendering::CameraPtr camera);
 
+private:
   std::shared_ptr<CameraCompositorListener> m_compositor_listener;
 };
 
 }
 
 
-#endif // CameraSimBase_h
+#endif // CameraCompositor_h

@@ -7,7 +7,7 @@
 #define CameraSimSensorPlugin_h
 
 
-#include "CameraSimBase.h"
+#include "CameraCompositor.h"
 #include <gazebo/common/Plugin.hh>
 
 
@@ -18,12 +18,15 @@ namespace irg {
  * This SensorPlugin will add a digital camera simulation to any sensor of type
  * 'camera' or 'multicamera' in your SDF code.
  */
-class CameraSimSensorPlugin : public CameraSimBase, public gazebo::SensorPlugin
+class CameraSimSensorPlugin : public gazebo::SensorPlugin
 {
 public:
   CameraSimSensorPlugin(){}
 
   virtual void Load(gazebo::sensors::SensorPtr sensor, sdf::ElementPtr sdf) override;
+
+private:
+  CameraCompositor m_camera_compositor;
 };
 
 }

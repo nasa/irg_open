@@ -7,7 +7,7 @@
 #define CameraSimVisualPlugin_h
 
 
-#include "CameraSimBase.h"
+#include "CameraCompositor.h"
 #include <gazebo/common/Plugin.hh>
 #include <gazebo/rendering/UserCamera.hh>
 
@@ -21,7 +21,7 @@ namespace irg {
  * implementation always resulted in a 640x480 black box drawn on top of the
  * contents of the GUI window. I was unable to defeat this bug.
  */
-class CameraSimVisualPlugin : public CameraSimBase, public gazebo::VisualPlugin
+class CameraSimVisualPlugin : public gazebo::VisualPlugin
 {
 public:
   CameraSimVisualPlugin();
@@ -31,6 +31,9 @@ public:
 private:
   /// \brief Re-initialize compositor on window resize
   void onUpdate();
+
+private:
+  CameraCompositor m_camera_compositor;
 
   sdf::ElementPtr m_sdf;
 

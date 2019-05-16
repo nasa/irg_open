@@ -7,20 +7,20 @@ include_directories(
 )
 
 add_library(${TARGET_NAME}SensorPlugin SHARED 
+  CameraCompositor.h
   CameraCompositorListener.h
-  CameraSimBase.h
   CameraSimSensorPlugin.h
+  CameraCompositor.cpp
   CameraCompositorListener.cpp
-  CameraSimBase.cpp
   CameraSimSensorPlugin.cpp
 )
 
 add_library(${TARGET_NAME}VisualPlugin SHARED
+  CameraCompositor.h
   CameraCompositorListener.h
-  CameraSimBase.h
   CameraSimVisualPlugin.h
+  CameraCompositor.cpp
   CameraCompositorListener.cpp
-  CameraSimBase.cpp
   CameraSimVisualPlugin.cpp
 )
 

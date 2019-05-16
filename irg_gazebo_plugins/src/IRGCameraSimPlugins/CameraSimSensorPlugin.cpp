@@ -27,7 +27,7 @@ void CameraSimSensorPlugin::Load(sensors::SensorPtr sensor, sdf::ElementPtr sdf)
   sensors::CameraSensorPtr camera_sensor = std::dynamic_pointer_cast<sensors::CameraSensor>(sensor);
   if (camera_sensor)
   {
-    setupCompositor(sdf, camera_sensor->Camera());
+    m_camera_compositor.setupCompositor(sdf, camera_sensor->Camera());
   }
 
   sensors::MultiCameraSensorPtr multi_camera_sensor = std::dynamic_pointer_cast<sensors::MultiCameraSensor>(sensor);
@@ -35,7 +35,7 @@ void CameraSimSensorPlugin::Load(sensors::SensorPtr sensor, sdf::ElementPtr sdf)
   {
     for (unsigned int i=0; i<multi_camera_sensor->CameraCount(); i++)
     {
-      setupCompositor(sdf, multi_camera_sensor->Camera(i));
+      m_camera_compositor.setupCompositor(sdf, multi_camera_sensor->Camera(i));
     }
   }
 }

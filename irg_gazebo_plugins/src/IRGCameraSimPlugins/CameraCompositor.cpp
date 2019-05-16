@@ -3,7 +3,7 @@
 // Administrator of the National Aeronautics and Space Administration. All
 // rights reserved.
 // __END_LICENSE__
-#include "CameraSimBase.h"
+#include "CameraCompositor.h"
 
 
 using namespace irg;
@@ -12,7 +12,7 @@ using namespace gazebo::rendering;
 using namespace Ogre;
 
 
-void CameraSimBase::setupCompositor(sdf::ElementPtr sdf, CameraPtr camera)
+void CameraCompositor::setupCompositor(sdf::ElementPtr sdf, CameraPtr camera)
 {
   // Create the listener
   if (!m_compositor_listener)

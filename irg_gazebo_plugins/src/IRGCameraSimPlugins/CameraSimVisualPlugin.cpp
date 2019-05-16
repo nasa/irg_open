@@ -49,7 +49,7 @@ void CameraSimVisualPlugin::Load(rendering::VisualPtr visual, sdf::ElementPtr sd
 
   m_width = m_camera->ViewportWidth();
   m_height = m_camera->ViewportHeight();
-  setupCompositor(m_sdf, m_camera);
+  m_camera_compositor.setupCompositor(m_sdf, m_camera);
 
   // Listen to the update event. This event is broadcast every sim iteration.
   m_update_connection = event::Events::ConnectPreRender(
@@ -65,9 +65,6 @@ void CameraSimVisualPlugin::onUpdate()
   {
     m_width = new_width;
     m_height = new_height;
-    setupCompositor(m_sdf, m_camera);
+    m_camera_compositor.setupCompositor(m_sdf, m_camera);
   }
-
-  // CompositorInstance::notifyResourcesCreated(bool forResizeOnly) appears to
-  // be made to handle resizes
 }
