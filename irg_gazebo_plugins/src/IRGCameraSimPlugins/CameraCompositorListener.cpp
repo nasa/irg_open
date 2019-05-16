@@ -44,7 +44,7 @@ void CameraCompositorListener::initParam(std::string name, double initial_value)
   m_param_map[name].m_value = initial_value;
 
   // create topic name
-  std::string topic("/camera_sim/");
+  std::string topic("/gazebo/plugins/camera_sim/");
   if (!m_topic_uid.empty())
   {
     topic += m_topic_uid;

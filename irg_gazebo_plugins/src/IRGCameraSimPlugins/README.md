@@ -56,7 +56,7 @@ settled on a VisualPlugin instead.
 
 ### Parameters
 The plugins can be initialized with user-defined values using the following parameters:
- - `<topic_uid>` - Changes topic from `/camera_sim/<topic>` to `/camera_sim/<topic_uid>/<topic>`.
+ - `<topic_uid>` - Changes topic from `/gazebo/plugins/camera_sim/<topic>` to `/gazebo/plugins/camera_sim/<topic_uid>/<topic>`.
  - `<exposure>` - Multiply original image by this value. Default = 1.0
  - `<gamma>` - Curve original image by this power. Default = 1.0
  - `<read_noise>` - Read noise coefficient. Default = 0.64
@@ -67,11 +67,11 @@ The plugins can be initialized with user-defined values using the following para
 Any parameter other than `topic_uid` can be modified at run-time by sending a
 message to a ROS topic of type `std_msgs/Float64`. A command-line example:
 ```
-rostopic pub -1 /camera_sim/exposure std_msgs/Float64 1.5
+rostopic pub -1 /gazebo/plugins/camera_sim/exposure std_msgs/Float64 1.5
 ```
 If you have defined your `topic_uid` as `foobar`, the example would be:
 ```
-rostopic pub -1 /camera_sim/foobar/exposure std_msgs/Float64 1.5
+rostopic pub -1 /gazebo/plugins/camera_sim/foobar/exposure std_msgs/Float64 1.5
 ```
 This allows you to define unique messages for each instance
 
