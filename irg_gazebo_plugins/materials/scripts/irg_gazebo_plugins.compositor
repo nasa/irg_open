@@ -31,18 +31,12 @@ compositor IRGCameraSim
   technique
   {
     // YOUR GRAPHICS CARD MUST SUPPORT frame buffer object (FBO) rendering to
-    // PF_FLOAT32_RGB and PF_SHORT_RGB for this compositor to work correctly.
+    // PF_FLOAT32_RGB for this compositor to work correctly.
     // Inspect ~/.gazebo/ogre.log to see if you have the right support.
 
-    // Temporary textures
-    // A floating-point texture to simulate light accumulation with aperture and
-    // shutter time (before the light lands on the sensor).
+    // A floating-point texture to render the scene to. The shader will process
+    // this texture as if it were light entering the camera.
     texture rt0 target_width target_height PF_FLOAT32_RGB
-    // A 16-bit texture to simulate a camera sensor. Can GLSL bit-shift output
-    // to simulate sensors of lower bit-depth?
-    texture rt1 target_width target_height PF_SHORT_RGB
-    // The final framebuffer should be set to the 16-bit as well, but that
-    // is defined in your .sdf description.
 
     target rt0
     {
@@ -50,29 +44,16 @@ compositor IRGCameraSim
       input previous
     }
 
-    target rt1
-    {
-      // Start with clear texture
-      input none
-
-      // Draw a fullscreen quad modified by exposure and gamma
-      pass render_quad
-      {
-        material IRGCameraExposureAndGamma
-        input 0 rt0
-      }
-    }
-
     target_output
     {
       // Start with clear output
       input none
 
-      // Draw a fullscreen quad modified by noise and gain
+      // Draw a fullscreen quad modified as if it were the output of a digital camera
       pass render_quad
       {
-        material IRGCameraNoiseAndGain
-        input 0 rt1
+        material IRGCameraSim
+        input 0 rt0
       }
     }
   }

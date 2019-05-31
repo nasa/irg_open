@@ -1,7 +1,7 @@
 // This shader is an adaptation of Gazebo's camera_noise_gaussian_fs.glsl,
-// licensed under the Apache License, Version 2.0. It is modified to apply our
-// own noise formula that is dependent on the pixel brightness from the base
-// image.
+// licensed under the Apache License, Version 2.0. It is modified to apply a
+// digital camera simulation model, including our own noise formula that is
+// dependent on the pixel brightness from the base image.
 
 // This fragment shader will add Gaussian noise to a rendered image.  It's
 // intended to be instantiated via Ogre's Compositor framework so that we're
@@ -45,6 +45,10 @@ uniform sampler2D RT;
 // Other parameters are set in C++, via
 // Ogre::GpuProgramParameters::setNamedConstant()
 
+// Exposure (shutter time) and gamma curve
+uniform float exposure;
+uniform float gamma;
+
 // Random values sampled on the CPU, which we'll use as offsets into our 2-D
 // pseudo-random sampler here.
 uniform vec3 offsets;
@@ -61,6 +65,9 @@ uniform float shot_noise;
 
 // This is the simplest possible simulation of camera sensor gain (or ISO)
 uniform float gain;
+
+// Bit-depth of digital camera output
+uniform float adc_bits;
 
 
 #define PI 3.14159265358979323846264
@@ -111,15 +118,51 @@ vec4 gaussrand(float I, vec2 co)
   return vec4(Z, Z, Z, 0.0);
 }
 
+vec3 downsample(vec3 color, float power_of_two)
+{
+  vec3 power_of_two_vec = vec3(power_of_two);
+  return floor(color * power_of_two_vec) / power_of_two_vec;
+
+  // If you are downsampling to, for example, 5 bits and rendering the final
+  // image to an 8-bit framebuffer or texture, you would expect the least
+  // significant 3 bits of each fragment to be 0. It doesn't work out this way
+  // due to floating-point inaccuracy. If we want to final result to be this
+  // perfect, we would add this to the result returned above:
+  //
+  // + vec3(0.5 / pow(2.0, render_target_bit_depth));
+  //
+  // This would require the user to pass render_target_bit_depth to this shader
+  // as a uniform. We don't yet know if this kind of exactness is necessary, so
+  // we haven't don it yet.
+
+  // An alternative way to downsample the texture would be:
+  //
+  // return color * (power_of_two / render_target_bit_depth_power_of_two);
+  //
+  // This would cause a smaller range of the final image's possible values to
+  // be used. The resulting image would look dark to a human viewer but might
+  // be appropriate for computer vision algorithms.
+}
+
 void main()
 {
   vec4 color = texture2D(RT, gl_TexCoord[0].xy);
 
-  // Add the luminance noise to the input color
+  // exposure
+  color.rgb *= vec3(exposure);
+
+  // gamma
+  color.rgb = pow(color.rgb, vec3(gamma));
+
+  // luminance noise
   float gray = dot(color.rgb, vec3(0.299, 0.587, 0.114));
   color.rgb += vec3(gaussrand(gray, gl_TexCoord[0].xy));
 
-  // Multiply by sensor gain
-  gl_FragColor = vec4(color.rgb * vec3(gain), color.a);
+  // sensor gain
+  color.rgb *= vec3(gain);
+
+  // downsample to simulate camera's analog-to-digital converter
+  float power_of_two = pow(2.0, adc_bits);
+  gl_FragColor = vec4(downsample(color.rgb, power_of_two), color.a);
 }
 

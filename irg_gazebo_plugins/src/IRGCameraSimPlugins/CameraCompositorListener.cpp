@@ -29,6 +29,7 @@ CameraCompositorListener::CameraCompositorListener(sdf::ElementPtr sdf)
   initParam("read_noise", 0.64);
   initParam("shot_noise", 0.09);
   initParam("gain", 1.0);
+  initParam("adc_bits", 12.0);
 
   // Get new values from the sdf element
   for (auto& p : m_param_map)
