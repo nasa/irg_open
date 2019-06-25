@@ -24,6 +24,7 @@ fragment_program IRGCameraSimFS glsl
     param_named RT int 0
     param_named exposure float 1.0
     param_named gamma float 1.0
+    param_named energy_conversion float 1.0
     param_named read_noise float 0.64
     param_named shot_noise float 0.09
     param_named offsets float3 0.0 0.0 0.0

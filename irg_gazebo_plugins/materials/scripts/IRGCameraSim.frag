@@ -49,6 +49,9 @@ uniform sampler2D RT;
 uniform float exposure;
 uniform float gamma;
 
+// Convert light energy to normalized sensor signal
+uniform float energy_conversion;
+
 // Random values sampled on the CPU, which we'll use as offsets into our 2-D
 // pseudo-random sampler here.
 uniform vec3 offsets;
@@ -153,6 +156,9 @@ void main()
 
   // gamma
   color.rgb = pow(color.rgb, vec3(gamma));
+
+  // convert light power to sensor signal
+  color.rgb *= vec3(energy_conversion);
 
   // luminance noise
   float gray = dot(color.rgb, vec3(0.299, 0.587, 0.114));

@@ -58,6 +58,7 @@ The plugins can be initialized with user-defined values using the following para
  - `<topic_uid>` - Changes topic from `/gazebo/plugins/camera_sim/<topic>` to `/gazebo/plugins/camera_sim/<topic_uid>/<topic>`.
  - `<exposure>` - Multiply original image by this value. Default = 1.0
  - `<gamma>` - Curve original image by this power. Default = 1.0
+ - `<energy_conversion>` - Pixel value per lux-second. A conversion factor from luminous energy to normalized sensor output. Default = 1.0
  - `<read_noise>` - Read noise coefficient. Default = 0.64
  - `<shot_noise>` - Shot noise coefficient. Default = 0.09
  - `<gain>` - Simulate sensor gain by multiplying 16-bit version of exposed image by this value. Default = 1.0
@@ -74,6 +75,24 @@ If you have defined your `topic_uid` as `foobar`, the example would be:
 rostopic pub -1 /gazebo/plugins/camera_sim/foobar/exposure std_msgs/Float64 1.5
 ```
 This allows you to define unique messages for each instance
+
+### Energy conversion
+An estimate of final image values would look something like this (don't take this
+equation literally--the real math would be much more complicated):
+```
+image value = lux or radiant power * scene albedo * exposure time
+              * (1 / f-number ^ 2) * lens transmittance * sensor pixel area * quantum efficiency
+              * sensor gain
+```
+This camera simulation plugin does not simulate anything between `f-number`
+and `quantum efficiency`, inclusive. If you want, you can estimate this entire
+part of the pipeline with the `energy_conversion` parameter. If well chosen,
+this will allow you to use realistic exposure times to achieve properly exposed
+final images.
+
+This estimate does not allow for a different energy conversion for each color
+channel, which might more realistically account for differences in color filters
+or be useful if you are working outside the visible spectrum.
 
 ### Noise
 This noise part of the plugin is based on gazebo's default
