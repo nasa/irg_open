@@ -12,7 +12,6 @@ fragment_program IRGCameraNoiseFS glsl
     param_named read_noise float 0.64
     param_named shot_noise float 0.09
     param_named offsets float3 0.0 0.0 0.0
-    param_named gain float 1.0
   }
 }
 
@@ -29,7 +28,7 @@ fragment_program IRGCameraSimFS glsl
     param_named shot_noise float 0.09
     param_named offsets float3 0.0 0.0 0.0
     param_named gain float 1.0
-    param_named adc_bits 12.0
+    param_named adc_bits float 12.0
   }
 }
 
