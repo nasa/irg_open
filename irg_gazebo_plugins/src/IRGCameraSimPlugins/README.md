@@ -4,11 +4,11 @@ IRG Camera Sim Plugins
 ----------------------------------
 These plugins use an Ogre compositor to simulate the effects of a digital camera
 on your scene rendering. The compositor renders the scene to floating point
-texture, applies exposure, applies gamma, applies noise, applies sensor gain,
-and renders the result to whatever texture or framebuffer the user has defined
-in his SDF code. Gamma is not a property of digital cameras, but it was easy to
-add and gives the developer a useful tool for rendering human-consumable
-images in the Gazebo GUI.
+texture, applies exposure, applies gamma, applies "energy conversion", applies
+noise, applies sensor gain, and renders the result to whatever texture or
+framebuffer the user has defined in his SDF code. Gamma is not a property of
+digital cameras, but it was easy to add and gives the developer a useful tool
+for rendering human-consumable images in the Gazebo GUI.
 
 IMPORTANT: For these plugins to work correctly your graphics card must support
 frame buffer object (FBO) rendering to `PF_FLOAT32_RGB`. Inspect
@@ -90,9 +90,33 @@ part of the pipeline with the `energy_conversion` parameter. If well chosen,
 this will allow you to use realistic exposure times to achieve properly exposed
 final images.
 
-This estimate does not allow for a different energy conversion for each color
+`energy_conversion` does not allow for a different energy conversion for each color
 channel, which might more realistically account for differences in color filters
 or be useful if you are working outside the visible spectrum.
+
+`energy_conversion` defaults to 1.0, effectively disabling this feature.
+
+#### Choosing an `energy_conversion` value
+There are many ways you could choose an energy conversion value. Here are some
+examples:
+
+**Example 1** Assume you are taking photos on Earth and applying the
+[Sunny 16 Rule](https://en.wikipedia.org/wiki/Sunny_16_rule) to choose a shutter
+speed (`exposure` value) of 1/100. If you want an incoming light value of 1.0
+(as is common in computer graphics) then `energy_conversion` must only compensate
+for the shutter speed. Set `energy_conversion` to 100.
+
+**Example 2** Say you want to keep using a shutter speed of 1/100 but now you
+want more realistic units for your incoming light value, such as lux. On a sunny
+day the surface of Earth receives lux = 120000, and Earth's average albedo = 0.3,
+so lux entering the camera = 120000 * 0.3 = 36000. You must compensate to achieve
+a properly exposed image. Set `energy_conversion` = 100 / 36000 = 0.0027778.
+
+You can build off these examples or find another method of estimating
+`energy_conversion`. Other circumstances may include:
+* Using a different f-number or exposure.
+* Taking pictures on another world with a different sun lux or surface albedo.
+* Using units other than lux, perhaps for light outside the visible spectrum.
 
 ### Noise
 This noise part of the plugin is based on gazebo's default
