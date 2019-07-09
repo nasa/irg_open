@@ -12,14 +12,15 @@
 
 namespace irg {
 
-  class NearFarClipPlugin : public gazebo::GUIPlugin
-  {
-  public:
-    NearFarClipPlugin();
-    ~NearFarClipPlugin();
+class NearFarClipPlugin : public gazebo::GUIPlugin
+{
+public:
+  NearFarClipPlugin();
+  ~NearFarClipPlugin();
 
-    virtual void Load(sdf::ElementPtr _sdf);
-  };
+  virtual void Load(sdf::ElementPtr _sdf);
+};
+
 }
 
 #endif // NearFarClipPlugin_h
