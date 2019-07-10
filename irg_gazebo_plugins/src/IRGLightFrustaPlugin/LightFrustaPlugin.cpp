@@ -1,3 +1,8 @@
+// __BEGIN_LICENSE__
+// Copyright (c) 2018-2019, United States Government as represented by the
+// Administrator of the National Aeronautics and Space Administration. All
+// rights reserved.
+// __END_LICENSE__
 #include "LightFrustaPlugin.h"
 #include <gazebo/rendering/rendering.hh>
 
@@ -13,7 +18,7 @@ LightFrustaPlugin::~LightFrustaPlugin() {
   m_update.reset();
 }
 
-void LightFrustaPlugin::Init() {
+void LightFrustaPlugin::Load(int _argc, char **_argv) {
   m_update = event::Events::ConnectPreRender(std::bind(&LightFrustaPlugin::disableLightFrusta, this));
 }
 
@@ -41,6 +46,7 @@ void LightFrustaPlugin::disableLightFrusta() {
 
     // Get the scene node and hide its frustum model
     Ogre::SceneNode* node = visual->GetSceneNode();
+    // numAttachedObjects() usually returns 0 for link lights. Is it a bug?
     for (auto i = 0; i < node->numAttachedObjects(); i++)
     {
       Ogre::MovableObject* obj = node->getAttachedObject(i);
