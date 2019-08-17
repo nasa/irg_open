@@ -1,10 +1,11 @@
 #include <unistd.h>
+#include <sys/stat.h>
 
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
 
-#include <yaml.h>
+#include <yaml-cpp/yaml.h>
 
 #include <ros/ros.h>
 #include <std_msgs/String.h>
@@ -15,6 +16,7 @@
 #include <geometry_msgs/TransformStamped.h>
 
 #include "ephemeris.h"
+#include "handle-options.h"
 
 using namespace std;
 using namespace ow;
@@ -126,6 +128,99 @@ broadcast_transforms(tf2_ros::TransformBroadcaster broadcaster,
   }
 }
 
+static int
+path_exists(const char *path)
+{
+  struct stat path_status;
+
+  return (stat(path, &path_status) == 0);
+}
+
+bool
+have_run_parameters_file(int argc, char *argv[], ros::NodeHandle &nodeHandle, string &run_parameters_filename)
+{
+  run_parameters_filename = "run_parameters.yaml";
+    
+  // Check for run parameter file arg passed via rosrun or roslaunch:
+  if (!nodeHandle.getParam("run_parameters_file", run_parameters_filename))
+  {
+    // Check for non-ROS command line args
+    Options options;
+    options.Add('f', "run parameters file name.\n", "string", 1);
+    int firstArgIndex = HandleOptions(argc, argv, options, 0, "");
+    if (options.GetOptionInfo('f')->IsSet())
+      run_parameters_filename = options.GetOptionInfo('f')->GetValuesString();
+  }
+  if (!path_exists(run_parameters_filename.c_str()))
+  {
+    run_parameters_filename = "";
+    return false;
+  }
+
+  return true;
+}
+
+void
+set_default_run_parameters(string &reference_body,
+			   vector<string> &target_bodies,
+			   float64_ow &mission_lat, float64_ow &mission_lon,
+			   string &leapSecondKernelPath, string &constantsKernelPath, string &ephemerisPath)
+{
+  reference_body = "MOON";
+  target_bodies.push_back("EARTH");
+  target_bodies.push_back("SUN");
+  mission_lat = 0.0;
+  mission_lon = 0.0;
+  leapSecondKernelPath = "./latest_leapseconds.tls";
+  constantsKernelPath =  "./pck00010.tpc";
+  ephemerisPath = "./de430.bsp";
+}
+
+bool
+read_run_parameters(const string &run_parameters_filename, string &reference_body,
+		    vector<string> &target_bodies,
+		    float64_ow &mission_lat, float64_ow &mission_lon,
+		    string &leapSecondKernelPath, string &constantsKernelPath, string &ephemerisPath)
+{
+  
+  YAML::Node parameters = YAML::LoadFile(run_parameters_filename);
+  if (parameters["reference_body"])
+    reference_body = parameters["reference_body"].as<string>();
+  else
+    return false;
+  if (parameters["target_bodies"])
+  {
+    YAML::Node target_bodies_node = parameters["target_bodies"];
+    for (std::size_t i = 0; i < target_bodies_node.size(); i++) 
+      target_bodies.push_back(target_bodies_node[i].as<string>());
+  }  
+  else
+    return false;
+  if (parameters["mission_lat"])
+    mission_lat = parameters["mission_lat"].as<double>();
+  else
+    return false;
+  if (parameters["mission_lon"])
+    mission_lon = parameters["mission_lon"].as<double>();
+  else
+    return false;
+  if (parameters["leap_second_kernel"])
+    leapSecondKernelPath = parameters["leap_second_kernel"].as<string>();
+  else
+    return false;
+  if (parameters["constants_kernel"])
+    constantsKernelPath = parameters["constants_kernel"].as<string>();
+  else
+    return false;
+  if (parameters["ephemeris"])
+    ephemerisPath = parameters["ephemeris"].as<string>();
+  else
+    return false;
+
+  return true;
+}
+
+
 int
 main(int argc, char *argv[])
 {
@@ -133,13 +228,14 @@ main(int argc, char *argv[])
   // unset
   check_ros_environment();
   
-  // Set up ROS
+  // ROS initialization
   ros::init(argc, argv, "ephemeris_publisher_node");
-  ros::NodeHandle nodeHandle;
-
+  ros::NodeHandle nodeHandle("~");
+  tf2_ros::TransformBroadcaster broadcaster;
+  tf2_ros::StaticTransformBroadcaster static_broadcaster;
   // Set the transform update rate
   ROS_INFO_STREAM("Starting ephemeris publisher node!");
-  std::string publishPeriodString;
+  string publishPeriodString;
   int publishPeriod;
   if (nodeHandle.getParam("ephemeris_publisher_period", publishPeriodString))
     publishPeriod = atoi(publishPeriodString.c_str());
@@ -147,8 +243,32 @@ main(int argc, char *argv[])
     publishPeriod = 5; // The default period
   ROS_INFO_STREAM("Setting publish period to " << publishPeriod);
 
-  tf2_ros::TransformBroadcaster broadcaster;
-  tf2_ros::StaticTransformBroadcaster static_broadcaster;
+  string run_parameters_filename;
+  string reference_body;
+  vector<string> target_bodies;
+  float64_ow mission_lat, mission_lon;
+  string leapSecondKernelPath, constantsKernelPath, ephemerisPath;
+  if (have_run_parameters_file(argc, argv, nodeHandle, run_parameters_filename))
+  {
+    if (!read_run_parameters(run_parameters_filename,
+			     reference_body, target_bodies,
+			     mission_lat, mission_lon,
+			     leapSecondKernelPath, constantsKernelPath, ephemerisPath))
+    {
+      cerr << "FATAL ERROR [main()]: unable to read run time parameters file. Exiting." << endl;
+      exit(-1);
+    }
+  }
+  else
+  {
+    set_default_run_parameters(reference_body, target_bodies,
+			       mission_lat, mission_lon,
+			       leapSecondKernelPath, constantsKernelPath, 
+			       ephemerisPath);
+  }
+  Ephemeris ephemeris(leapSecondKernelPath, constantsKernelPath, ephemerisPath);
+  
+  // Broadcasting loop
   bool first_error = true;
   ros::Rate publishRate(publishPeriod);
   ROS_INFO_STREAM("Entering broadcasting loop...");
@@ -166,6 +286,8 @@ main(int argc, char *argv[])
       continue;
     }
     
+    broadcast_transforms(broadcaster, reference_body, mission_lat, mission_lon,
+			 target_bodies, current_time, ephemeris);
     
     publishRate.sleep();
   }
