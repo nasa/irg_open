@@ -13,9 +13,9 @@ using namespace std;
 Ephemeris::Ephemeris()
 {
   m_ephemerisHandle = 0;
-  m_leapSecondKernelPath = "./spice.tls";
-  m_constantsKernelPath =  "./spice.tpc";
-  m_ephemerisPath = "./spice.bsp";
+  m_leapSecondKernelPath = "./latest_leapseconds.tls";
+  m_constantsKernelPath =  "./pck00010.tpc";
+  m_ephemerisPath = "./de430.bsp";
 
   // Set the SPICELIB error response action to "RETURN":
   erract_c("SET", 0, (char *) "RETURN");
