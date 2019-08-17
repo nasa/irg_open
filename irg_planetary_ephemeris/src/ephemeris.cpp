@@ -15,7 +15,7 @@ Ephemeris::Ephemeris()
   m_ephemerisHandle = 0;
   m_leapSecondKernelPath = "./latest_leapseconds.tls";
   m_constantsKernelPath =  "./pck00010.tpc";
-  m_ephemerisPath = "./de430.bsp";
+  m_ephemerisPaths.push_back("./de430.bsp");
 
   // Set the SPICELIB error response action to "RETURN":
   erract_c("SET", 0, (char *) "RETURN");
@@ -30,7 +30,23 @@ Ephemeris::Ephemeris(const string& leapSecondKernelPath,
   m_ephemerisHandle = 0;
   m_leapSecondKernelPath = leapSecondKernelPath;
   m_constantsKernelPath = constantsKernelPath;
-  m_ephemerisPath = ephemerisPath;
+  m_ephemerisPaths.push_back(ephemerisPath);
+
+  // Set the SPICELIB error response action to "RETURN":
+  erract_c("SET", 0, (char *) "RETURN");
+
+  Load();			// Load the SPICE kernels
+}
+
+Ephemeris::Ephemeris(const string& leapSecondKernelPath,
+		     const string& constantsKernelPath,
+		     const vector<string>& ephemerisPaths)
+{ 
+  m_ephemerisHandle = 0;
+  m_leapSecondKernelPath = leapSecondKernelPath;
+  m_constantsKernelPath = constantsKernelPath;
+  for (int i; i < ephemerisPaths.size(); ++i)
+    m_ephemerisPaths.push_back(ephemerisPaths[i]);
 
   // Set the SPICELIB error response action to "RETURN":
   erract_c("SET", 0, (char *) "RETURN");
@@ -50,7 +66,8 @@ void Ephemeris::Load()
     ldpool_c(m_constantsKernelPath.c_str());
     // Note: we never use the ephemeris handle, so we could just use the
     // high level function furnsh_c() instead of spklef_c().
-    spklef_c(m_ephemerisPath.c_str(), &m_ephemerisHandle);
+    for (int i = 0; i < m_ephemerisPaths.size(); ++i)
+      spklef_c(m_ephemerisPaths[i].c_str(), &m_ephemerisHandle);
 }
 
 void Ephemeris::UnLoad()

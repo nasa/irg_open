@@ -8,6 +8,7 @@
 #include <cstring>
 #include <iostream>
 #include <string>
+#include <vector>
 #include <fstream>
 
 namespace ow
@@ -30,6 +31,10 @@ namespace ow
     Ephemeris(const std::string& leapSecondKernelPath,
 	      const std::string& constantsKernelPath,
 	      const std::string& positionKernelPath);
+
+    Ephemeris(const std::string& leapSecondKernelPath,
+	      const std::string& constantsKernelPath,
+	      const std::vector<std::string>& positionKernelPaths);
 
     ~Ephemeris();
     
@@ -66,7 +71,7 @@ namespace ow
     int32_t m_ephemerisHandle = 0;
     std::string m_leapSecondKernelPath;
     std::string m_constantsKernelPath; // planetary shape/size/orientation constants
-    std::string m_ephemerisPath; // ephemerides with planet and spacecraft positions and velocities
+    std::vector<std::string> m_ephemerisPaths; // ephemerides with planet and spacecraft positions and velocities
   };
 }
 

@@ -68,6 +68,7 @@ make_time_stamped_transform(const std::string &reference_body,
   const std::string RP_SUN_NAME   = "sun_frame";
   const double KM_TO_M = 1000.0; // Convert from kilometers to meters
 
+  // TODO: generate frame name based on NAIF body names.
   string reference_frame_name, target_frame_name;
   
   geometry_msgs::Transform transform_msg;
@@ -164,7 +165,8 @@ void
 set_default_run_parameters(string &reference_body,
 			   vector<string> &target_bodies,
 			   float64_ow &mission_lat, float64_ow &mission_lon,
-			   string &leapSecondKernelPath, string &constantsKernelPath, string &ephemerisPath)
+			   string &leapSecondKernelPath, string &constantsKernelPath, 
+			   vector<string> &ephemerisPaths)
 {
   reference_body = "MOON";
   target_bodies.push_back("EARTH");
@@ -173,14 +175,14 @@ set_default_run_parameters(string &reference_body,
   mission_lon = 0.0;
   leapSecondKernelPath = "./latest_leapseconds.tls";
   constantsKernelPath =  "./pck00010.tpc";
-  ephemerisPath = "./de430.bsp";
+  ephemerisPaths = { "./de430.bsp" };
 }
 
 bool
 read_run_parameters(const string &run_parameters_filename, string &reference_body,
 		    vector<string> &target_bodies,
 		    float64_ow &mission_lat, float64_ow &mission_lon,
-		    string &leapSecondKernelPath, string &constantsKernelPath, string &ephemerisPath)
+		    string &leapSecondKernelPath, string &constantsKernelPath, vector<string> &ephemerisPaths)
 {
   
   YAML::Node parameters = YAML::LoadFile(run_parameters_filename);
@@ -212,8 +214,12 @@ read_run_parameters(const string &run_parameters_filename, string &reference_bod
     constantsKernelPath = parameters["constants_kernel"].as<string>();
   else
     return false;
-  if (parameters["ephemeris"])
-    ephemerisPath = parameters["ephemeris"].as<string>();
+  if (parameters["ephemerides"])
+  {
+    YAML::Node ephemerides_node = parameters["ephemerides"];
+    for (std::size_t i = 0; i < ephemerides_node.size(); i++) 
+      ephemerisPaths.push_back(ephemerides_node[i].as<string>());
+  }
   else
     return false;
 
@@ -247,13 +253,14 @@ main(int argc, char *argv[])
   string reference_body;
   vector<string> target_bodies;
   float64_ow mission_lat, mission_lon;
-  string leapSecondKernelPath, constantsKernelPath, ephemerisPath;
+  string leapSecondKernelPath, constantsKernelPath;
+  vector<string> ephemerisPaths;
   if (have_run_parameters_file(argc, argv, nodeHandle, run_parameters_filename))
   {
     if (!read_run_parameters(run_parameters_filename,
 			     reference_body, target_bodies,
 			     mission_lat, mission_lon,
-			     leapSecondKernelPath, constantsKernelPath, ephemerisPath))
+			     leapSecondKernelPath, constantsKernelPath, ephemerisPaths))
     {
       cerr << "FATAL ERROR [main()]: unable to read run time parameters file. Exiting." << endl;
       exit(-1);
@@ -264,9 +271,9 @@ main(int argc, char *argv[])
     set_default_run_parameters(reference_body, target_bodies,
 			       mission_lat, mission_lon,
 			       leapSecondKernelPath, constantsKernelPath, 
-			       ephemerisPath);
+			       ephemerisPaths);
   }
-  Ephemeris ephemeris(leapSecondKernelPath, constantsKernelPath, ephemerisPath);
+  Ephemeris ephemeris(leapSecondKernelPath, constantsKernelPath, ephemerisPaths);
   
   // Broadcasting loop
   bool first_error = true;
