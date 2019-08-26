@@ -14,6 +14,7 @@ This is a visual plugin that can only be use within a Gazebo `<visual>` tag like
   .
   <plugin name="irradiance_map" filename="libIRGIrradianceMapPlugin.so">
     <texture_unit>irradiance_environment_map</texture_unit>
+    <visibility_bitmask>0x0000000f</visibility_bitmask>
   </plugin>
 </visual>
 ```
@@ -26,3 +27,10 @@ to the plugin:
   {
   }
 ```
+
+Optionally, you can set a `visibility_bitmask` if you want to selectively render
+gazebo::rendering::Visuals into your irradiance map. You can set a bitmask on a
+Visual by calling `Visual::SetVisibilityFlags()`. If the result of and-ing that
+bitmask and your `visibility_bitmask` is non-zero, that Visual will be rendered
+into your irradiance map. Otherwise, it will not be rendered.
+

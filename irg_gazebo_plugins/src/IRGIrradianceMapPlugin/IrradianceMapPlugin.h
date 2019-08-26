@@ -46,6 +46,12 @@ private:
 
   Ogre::String m_texture_unit_name;
 
+  // This mask will interact with Ogre3D's visibility flags, which can be set
+  // with gazebo::rendering::Visual::setVisibilityFlags(). The result of and-ing
+  // this mask with that one will determine whether a visual is rendered.
+  uint32_t m_visibility_bitmask;
+  bool m_use_visibility_bitmask;
+
   // Connection to the update event
   gazebo::event::ConnectionPtr m_update_connection;
 
