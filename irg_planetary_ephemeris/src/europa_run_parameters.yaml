@@ -1,0 +1,8 @@
+reference_body: EUROPA
+target_bodies: [SUN, JUPITER]
+mission_lat: 0.0
+mission_lon: 0.0
+mission_elev: 0.0
+leap_second_kernel: ./latest_leapseconds.tls
+constants_kernel: ./pck00010.tpc
+ephemerides: [./de430.bsp, ./jup310.bsp]
