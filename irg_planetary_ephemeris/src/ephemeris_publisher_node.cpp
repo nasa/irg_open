@@ -43,7 +43,7 @@ inline std::string ros_time_to_string(ros::Time ros_time)
   time_t epoch_time = ros_time.sec;
 
   // Convert to a string
-  const std::string format = "%Y-%m-%dT%H:%M:%S";
+  const string format = "%Y-%m-%dT%H:%M:%S";
   char timestamp[64] = {0};
   strftime(timestamp, sizeof(timestamp), format.c_str(), gmtime(&epoch_time));
 
@@ -57,19 +57,25 @@ inline std::string ros_time_to_string(ros::Time ros_time)
   return time_string.str();
 }
 
+string tolower_string(string the_string)
+{
+  transform(the_string.begin(), the_string.end(), the_string.begin(), 
+	    [](unsigned char ch){ return tolower(ch); } );
+  return the_string;
+}
+
 geometry_msgs::TransformStamped
 make_time_stamped_transform(const std::string &reference_body,
 			    const std::string &target_body,
 			    const ros::Time &ros_time,
 			    float64_ow spice_transform[16])
 {
-  const std::string RP_MOON_NAME  = "moon_frame";
-  const std::string RP_EARTH_NAME = "earth_frame";
-  const std::string RP_SUN_NAME   = "sun_frame";
   const double KM_TO_M = 1000.0; // Convert from kilometers to meters
 
-  // TODO: generate frame name based on NAIF body names.
-  string reference_frame_name, target_frame_name;
+  // Frame names are just lower case versions of NAIF body names.
+  string reference_frame_name = reference_body, target_frame_name = target_body;
+  tolower_string(reference_frame_name);
+  tolower_string(target_frame_name);
   
   geometry_msgs::Transform transform_msg;
   geometry_msgs::TransformStamped time_stamped_transform_msg;
@@ -138,7 +144,8 @@ path_exists(const char *path)
 }
 
 bool
-have_run_parameters_file(int argc, char *argv[], ros::NodeHandle &nodeHandle, string &run_parameters_filename)
+have_run_parameters_file(int argc, char *argv[], ros::NodeHandle &nodeHandle,
+			 string &run_parameters_filename)
 {
   run_parameters_filename = "run_parameters.yaml";
     
@@ -274,7 +281,8 @@ main(int argc, char *argv[])
 			     leapSecondKernelPath, constantsKernelPath, 
 			     ephemerisPaths))
     {
-      cerr << "FATAL ERROR [main()]: unable to read run time parameters file. Exiting." << endl;
+      cerr << "FATAL ERROR [main()]: "
+	   << "unable to read run time parameters file. Exiting." << endl;
       exit(-1);
     }
   }
@@ -297,7 +305,8 @@ main(int argc, char *argv[])
     ros::Time current_time = ros::Time::now();
     if (current_time.sec < 400000000) // An arbitrary time very far from 0! 
     {
-      if (!first_error) // This always happens once in sim so suppress the first error message.
+      if (!first_error) // This always happens once in sim so suppress
+			// the first error message.
         ROS_ERROR_STREAM("Got low value for ros::Time::now() in the solar frame publisher: "
                          << current_time);
       first_error = false;
