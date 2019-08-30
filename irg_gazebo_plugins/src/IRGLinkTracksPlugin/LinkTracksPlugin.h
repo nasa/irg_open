@@ -9,6 +9,8 @@
 #include <gazebo/common/Plugin.hh>
 #include <ros/ros.h>
 #include <std_msgs/String.h>
+#include <std_msgs/Bool.h>
+#include <std_msgs/UInt8MultiArray.h>
 #include <OGRE/OgreVector3.h>
 #include <OGRE/OgreTexture.h>
 
@@ -34,11 +36,14 @@ namespace gazebo {
 
     void Draw(const Ogre::Vector2& uv);
 
-    void OnSaveImage(const std_msgs::StringConstPtr& msg);
-
     void SaveImage(const std::string& filename);
 
     void LoadImage(const std::string& filename);
+    
+    //-- ROS callbacks
+    void OnSaveImage(const std_msgs::StringConstPtr& msg);
+    void OnLinkEnable(const std_msgs::UInt8MultiArrayConstPtr& msg);
+    void OnDrawEnable(const std_msgs::BoolConstPtr& msg);
 
   private:
     // Connection to the update event
@@ -47,18 +52,26 @@ namespace gazebo {
     int mTexWidth;
     int mTexHeight;
 
-    std::string      mTextureName;
-    Ogre::TexturePtr mTexture;
+    std::string       mTextureName;
+    Ogre::TexturePtr  mTexture;
 
-    Ogre::Vector3 mLinkPos[4];
-
+    std::vector<std::string>    mLinkName;
+    std::vector<Ogre::Vector3>  mLinkPos;
+    std::vector<uint8_t>        mLinkEnabled; //< disable draw of individual link
+    
+    bool   mDrawEnabled; //< disable all drawing 
+    
+    double mMinDistThresh;
     double mTrackWidth;
     double mTrackDepth;
     double mTrackExp;
     
     // For subscribing to ROS messages
     std::unique_ptr<ros::NodeHandle> mNodeHandle;
-    ros::Subscriber mSaveImageSub;
+    ros::Subscriber   mSaveImageSub;
+    ros::Subscriber   mLinkEnableSub;
+    ros::Subscriber   mDrawEnableSub;
+    
     std::string mSaveImage;
     std::string mLoadImage;
   };

@@ -17,21 +17,20 @@ using namespace Ogre;
 
 GZ_REGISTER_VISUAL_PLUGIN(LinkTracksPlugin)
 
+/**
+ * ctor
+ */
 LinkTracksPlugin::LinkTracksPlugin() :
   VisualPlugin(),
   mTexWidth(0),
   mTexHeight(0),
   mTextureName("wheelTracks"),
+  mMinDistThresh(0.05),
   mTrackWidth(4.5),
   mTrackDepth(1.0),
   mTrackExp(2.0)
 {
   mTexture.setNull();
-
-  for (int i=0; i<4; i++)
-  {
-    mLinkPos[i] = Vector3(0.0, 0.0, 0.0);
-  }
 
   // Initialize ros, if it has not already bee initialized.
   if (!ros::isInitialized())
@@ -44,51 +43,97 @@ LinkTracksPlugin::LinkTracksPlugin() :
 
   // Create our ROS node. This acts in a similar manner to the Gazebo node
   mNodeHandle.reset(new ros::NodeHandle("gazebo_client"));
-
-  mSaveImageSub = mNodeHandle->subscribe("/link_tracks/save_image", 1,
-    &LinkTracksPlugin::OnSaveImage, this);
 }
 
+/**
+ * dtor
+ */
 LinkTracksPlugin::~LinkTracksPlugin()
 {
 }
 
+/**
+ * Load values from SDF and setup subscriptions
+ */
 void LinkTracksPlugin::Load(rendering::VisualPtr _sensor, sdf::ElementPtr _sdf)
 {
-  // Listen to the update event. This event is broadcast every sim iteration.
-  this->mUpdateConnection = event::Events::ConnectPreRender(
-    boost::bind(&LinkTracksPlugin::OnUpdate, this));
-
+  //-- specify link names
+  for(int i = 0; i < 16; i++) {
+    char buf[128];
+    snprintf(buf, 128, "link_name_%d", i);
+    if(_sdf->HasElement(buf)) {
+      mLinkName.push_back(_sdf->Get<std::string>(buf));
+    }
+    else {
+      break; // names must be consecutive starting at 0
+    }
+  }
+  // initialize LinkPos and LinkEnable variables
+  for(auto& name : mLinkName) {
+    mLinkPos.push_back(Vector3(0.0, 0.0, 0.0));
+    mLinkEnabled.push_back(1);
+  }
+  gzlog << "LinkTracksPlugin::Load - " << mLinkName.size() << " links were specified." << endl;
+  
+  //-- texture name in terrain shader 
   if (_sdf->HasElement("texture_name")) {
     mTextureName = _sdf->Get<string>("texture_name");
   }
   
+  //-- initial image load
   if (_sdf->HasElement("load_image")) {
     mLoadImage = _sdf->Get<string>("load_image");
   }
-  // if parameter exists on ROS param server, use that
+  // if parameter exists on ROS param server, use that instead
   const char* param_name = "/gazebo/plugins/link_tracks/load_image";
   if(ros::param::has(param_name)) {
     ros::param::get(param_name, mLoadImage);
   }
   
+  //-- track width
   if (_sdf->HasElement("track_width")) {
     mTrackWidth = _sdf->Get<double>("track_width");
     mTrackWidth = max(mTrackWidth, 0.0);
   }
 
+  //-- track depth
   if (_sdf->HasElement("track_depth")) {
     mTrackDepth = _sdf->Get<double>("track_depth");
     mTrackDepth = max(mTrackDepth, 0.0);
     mTrackDepth = min(mTrackDepth, 1.0);
   }
 
+  //-- track exponent
   if (_sdf->HasElement("track_exponent")) {
     mTrackExp = _sdf->Get<double>("track_exponent");
     mTrackExp = max(mTrackExp, 0.0);
   }
+  
+  //-- min distance threshold
+  if (_sdf->HasElement("min_dist_thresh")) {
+    mMinDistThresh = _sdf->Get<double>("min_dist_thresh");
+    mMinDistThresh = max(mTrackExp, 0.001);
+  }
+  
+  //== subscribe to ROS messages ==============
+  mSaveImageSub = mNodeHandle->subscribe("/gazebo/plugins/link_tracks/save_image", 1,
+                                         &LinkTracksPlugin::OnSaveImage, this);
+  
+  mLinkEnableSub = mNodeHandle->subscribe("/gazebo/plugins/link_tracks/link_enable", 1,
+                                          &LinkTracksPlugin::OnLinkEnable, this);
+
+  mDrawEnableSub = mNodeHandle->subscribe("/gazebo/plugins/link_tracks/draw_enable", 1,
+                                          &LinkTracksPlugin::OnDrawEnable, this);
+
+  //== Listen to frame update event ===========
+  this->mUpdateConnection = event::Events::ConnectPreRender(
+    boost::bind(&LinkTracksPlugin::OnUpdate, this));
 }
 
+/**
+ * Create texture to draw into 
+ * @returns true if texture already exists or has successfully been created
+ */
 bool LinkTracksPlugin::InitTexture()
 {
   if (!mTexture.isNull()) {
@@ -98,13 +143,13 @@ bool LinkTracksPlugin::InitTexture()
 
   rendering::ScenePtr scene = rendering::get_scene();
   if (!scene) {
-    gzerr << "LinkTracksPlugin::InitTexture: scene pointer is NULL" << endl;
+    gzerr << "LinkTracksPlugin::InitTexture - scene pointer is NULL" << endl;
     return false;
   }
 
   rendering::Heightmap* heightmap = scene->GetHeightmap();
   if (!heightmap) {
-    gzerr << "LinkTracksPlugin::InitTexture: heightmap pointer is NULL" << endl;
+    gzerr << "LinkTracksPlugin::InitTexture - heightmap pointer is NULL" << endl;
     return false;
   }
 
@@ -112,13 +157,13 @@ bool LinkTracksPlugin::InitTexture()
   // assign the new link tracks texture.
   MaterialPtr parentMat = MaterialManager::getSingleton().getByName(heightmap->MaterialName());
   if (parentMat.isNull()) {
-    gzerr << "LinkTracksPlugin::InitTexture: material pointer is NULL" << endl;
+    gzerr << "LinkTracksPlugin::InitTexture - material pointer is NULL" << endl;
     return false;
   }
   // Get dimensions of terrain.
   TextureUnitState* normalsTus = parentMat->getTechnique(0)->getPass(0)->getTextureUnitState("normals");
   if (!normalsTus) {
-    gzerr << "LinkTracksPlugin::InitTexture: normals TextureUnitState is NULL" << endl;
+    gzerr << "LinkTracksPlugin::InitTexture - normals TextureUnitState is NULL" << endl;
     return false;
   }
   pair< size_t, size_t > size = normalsTus->getTextureDimensions();
@@ -143,23 +188,20 @@ bool LinkTracksPlugin::InitTexture()
   // Unlock the pixel buffer
   pixelBuffer->unlock();
 
-  if (!mLoadImage.empty())
-  {
+  if (!mLoadImage.empty()) {
     // Load a saved image
     LoadImage(mLoadImage);
     mLoadImage = "";
   }
 
-  gzlog << "LinkTracksPlugin::InitTexture: texture was created." << endl;
+  gzlog << "LinkTracksPlugin::InitTexture - texture was created." << endl;
 
   // Assign texture to all cloned terrain materials
   TerrainGroup::TerrainIterator ti = heightmap->OgreTerrain()->getTerrainIterator();
-  while (ti.hasMoreElements())
-  {
+  while (ti.hasMoreElements()) {
     Terrain *terrain = ti.getNext()->instance;
-    if (!terrain)
-    {
-      gzerr << "LinkTracksPlugin::InitTexture: this should never happen" << endl;
+    if (!terrain) {
+      gzerr << "LinkTracksPlugin::InitTexture - this should never happen" << endl;
       continue;
     }
     MaterialPtr terrainMat = terrain->getMaterial();
@@ -169,7 +211,7 @@ bool LinkTracksPlugin::InitTexture()
       tus->setTexture(mTexture);
     }
     else {
-      gzerr << "LinkTracksPlugin::InitTexture ERROR: could not get texture \"" << 
+      gzerr << "LinkTracksPlugin::InitTexture -ERROR- could not get texture \"" << 
         mTextureName << "\" from terrain shader." << endl;
       return false; 
     }
@@ -178,27 +220,31 @@ bool LinkTracksPlugin::InitTexture()
   return true;
 }
 
+/**
+ * frame callback
+ */
 void LinkTracksPlugin::OnUpdate()
 {
   // Cannot do this in constructor or Load function because Heightmap is not yet available.
-  if (!InitTexture())
-  {
+  if (!InitTexture()) {
      return;
   }
 
   rendering::ScenePtr scene = rendering::get_scene();
   if (!scene) {
-    gzerr << "LinkTracksPlugin::OnUpdate: scene pointer is NULL" << endl;
+    gzerr << "LinkTracksPlugin::OnUpdate - scene pointer is NULL" << endl;
     return;
   }
 
-  ProcessLink(scene->GetVisual("mobile_base::front_left_wheel_link"), 0);
-  ProcessLink(scene->GetVisual("mobile_base::rear_left_wheel_link"), 1);
-  ProcessLink(scene->GetVisual("mobile_base::front_right_wheel_link"), 2);
-  ProcessLink(scene->GetVisual("mobile_base::rear_right_wheel_link"), 3);
+  if(mDrawEnabled) {
+    for(int i = 0; i < mLinkName.size(); i++) {
+      if(mLinkEnabled[i]) {
+        ProcessLink(scene->GetVisual(mLinkName[i]), i);
+      }
+    }
+  }
 
-  if (!mSaveImage.empty())
-  {
+  if (!mSaveImage.empty()) {
     SaveImage(mSaveImage);
     mSaveImage = "";
   }
@@ -208,50 +254,52 @@ void LinkTracksPlugin::OnUpdate()
 static const int WARN_MAX_ProcessLink = 40;
 static       int warn_cnt_ProcessLink = 0;
 
+/**
+ * Get current link position and draw into texture
+ */
 void LinkTracksPlugin::ProcessLink(const rendering::VisualPtr& visual, const int linkIndex)
 {
-  gzerr << "********************************** Process Link " << linkIndex << endl;
   if(!visual) {
-    
     if(warn_cnt_ProcessLink++ < WARN_MAX_ProcessLink)
-      gzerr << "LinkTracksPlugin::ProcessLink: visual pointer for link " << linkIndex << " is NULL" << endl;
+      gzerr << "LinkTracksPlugin::ProcessLink - visual pointer for link " << linkIndex << " is NULL" << endl;
     return;
   }
 
   ignition::math::Pose3d pose = visual->WorldPose();
 
   // If link has moved beyond a certain threshold, draw an indentation in terrain.
-  const double thresholdDistance = 0.05;
-  Vector3 position(pose.Pos().X(), pose.Pos().Y(), pose.Pos().Z());
+  // only populate X and Y, we don't care about movement in Z
+  Vector3 position(pose.Pos().X(), pose.Pos().Y(), 0.0);
   Vector3 diff = position - mLinkPos[linkIndex];
-  if (diff.length() >= thresholdDistance)
-  {
+  if (diff.length() >= mMinDistThresh) {
     mLinkPos[linkIndex] = position;
     Vector2 uv;
-    if (TransformLinkPositionToUV(position, uv))
-    {
+    if (TransformLinkPositionToUV(position, uv)) {
       Draw(uv);
     }
   }
 }
 
+/**
+ * map from X,Y world space into UV
+ */
 bool LinkTracksPlugin::TransformLinkPositionToUV(const Vector3& wsPosition, Vector2& uv)
 {
   rendering::ScenePtr scene = rendering::get_scene();
   if (!scene) {
-    gzerr << "LinkTracksPlugin::Draw: scene pointer is NULL" << endl;
+    gzerr << "LinkTracksPlugin::Draw - scene pointer is NULL" << endl;
     return false;
   }
 
   rendering::Heightmap* heightmap = scene->GetHeightmap();
   if (!heightmap) {
-    gzerr << "LinkTracksPlugin::Draw: heightmap pointer is NULL" << endl;
+    gzerr << "LinkTracksPlugin::Draw - heightmap pointer is NULL" << endl;
     return false;
   }
 
   TerrainGroup* terrainGroup = heightmap->OgreTerrain();
   if (!terrainGroup) {
-    gzerr << "LinkTracksPlugin::Draw: terrainGroup pointer is NULL" << endl;
+    gzerr << "LinkTracksPlugin::Draw - terrainGroup pointer is NULL" << endl;
     return false;
   }
 
@@ -272,6 +320,9 @@ bool LinkTracksPlugin::TransformLinkPositionToUV(const Vector3& wsPosition, Vect
   return true;
 }
 
+/**
+ * draw dot into texture
+ */
 void LinkTracksPlugin::Draw(const Vector2& uv)
 {
   const int halfSize = (mTrackWidth + 2.0) * 0.5;
@@ -333,36 +384,58 @@ void LinkTracksPlugin::Draw(const Vector2& uv)
   pixelBuffer->unlock();
 }
 
+/**
+ * ROS message callback
+ */
 void LinkTracksPlugin::OnSaveImage(const std_msgs::StringConstPtr& msg)
 {
   mSaveImage = msg->data;
 }
 
+/**
+ * ROS message callback
+ */
+void LinkTracksPlugin::OnLinkEnable(const std_msgs::UInt8MultiArrayConstPtr& msg)
+{
+  for(int i = 0; i < msg->data.size(); i++) {
+    if(i < mLinkEnabled.size()) {
+      mLinkEnabled[i] = msg->data[i];
+    }
+  }
+}
+
+/**
+ * ROS message callback
+ */
+void LinkTracksPlugin::OnDrawEnable(const std_msgs::BoolConstPtr& msg)
+{
+  mDrawEnabled = msg->data;
+}
+
+/**
+ * 
+ */
 void LinkTracksPlugin::SaveImage(const string& filename)
 {
-  if (filename.empty())
-  {
-    gzerr << "LinkTracksPlugin::SaveImage: filename empty" << endl;
+  if (filename.empty()) {
+    gzerr << "LinkTracksPlugin::SaveImage - filename empty" << endl;
     return;
   }
 
-  if (mTexture.isNull())
-  {
-    gzerr << "LinkTracksPlugin::SaveImage: texture has not been created" << endl;
+  if (mTexture.isNull()) {
+    gzerr << "LinkTracksPlugin::SaveImage - texture has not been created" << endl;
     return;
   }
 
   size_t index = filename.find_last_of('.');
-  if (index == string::npos)
-  {
-    gzerr << "LinkTracksPlugin::SaveImage: filename must have .png extension (i.e. /tmp/tracks.png)" << endl;
+  if (index == string::npos) {
+    gzerr << "LinkTracksPlugin::SaveImage - filename must have .png extension (e.g. /tmp/tracks.png)" << endl;
     return;
   }
 
   string extension = filename.substr(index+1);
-  if (strcasecmp(extension.c_str(), "png") != 0)
-  {
-    gzerr << "LinkTracksPlugin::SaveImage: filename must have .png extension (i.e. /tmp/tracks.png)" << endl;
+  if (strcasecmp(extension.c_str(), "png") != 0) {
+    gzerr << "LinkTracksPlugin::SaveImage - filename must have .png extension (e.g. /tmp/tracks.png)" << endl;
     return;
   }
 
@@ -384,39 +457,37 @@ void LinkTracksPlugin::SaveImage(const string& filename)
   image.SavePNG(filename);
 
   struct stat stat_buf;
-  if (stat (filename.c_str(), &stat_buf) != 0)
-  {
-    gzerr << "LinkTracksPlugin::SaveImage: failed to write " << filename << endl;
+  if (stat (filename.c_str(), &stat_buf) != 0) {
+    gzerr << "LinkTracksPlugin::SaveImage - failed to write " << filename << endl;
     return;
   }
 
-  gzmsg << "LinkTracksPlugin: saved image to " << filename << endl;
+  gzmsg << "LinkTracksPlugin - saved image to " << filename << endl;
 }
 
+/**
+ * 
+ */
 void LinkTracksPlugin::LoadImage(const string& filename)
 {
-  if (filename.empty())
-  {
-    gzerr << "LinkTracksPlugin::LoadImage: filename empty" << endl;
+  if (filename.empty()) {
+    gzerr << "LinkTracksPlugin::LoadImage - filename empty" << endl;
     return;
   }
 
-  if (mTexture.isNull())
-  {
-    gzerr << "LinkTracksPlugin::LoadImage: texture has not been created" << endl;
+  if (mTexture.isNull()) {
+    gzerr << "LinkTracksPlugin::LoadImage - texture has not been created" << endl;
     return;
   }
 
   ifstream ifs(filename.c_str(), ios::binary|ios::in);
-  if (!ifs.is_open())
-  {
-    gzerr << "LinkTracksPlugin::LoadImage: could not open " << filename << endl;
+  if (!ifs.is_open()) {
+    gzerr << "LinkTracksPlugin::LoadImage - could not open " << filename << endl;
     return;
   }
 
   size_t index = filename.find_last_of('.');
-  if (index != string::npos)
-  {
+  if (index != string::npos) {
     string extension = filename.substr(index+1);
     DataStreamPtr data_stream(new FileStreamDataStream(filename, &ifs, false));
     Image image;
@@ -425,7 +496,7 @@ void LinkTracksPlugin::LoadImage(const string& filename)
     // we will always be providing an image of the same size as the texture.
     mTexture->loadImage(image);
 
-    gzmsg << "LinkTracksPlugin: loaded image " << filename << endl;
+    gzmsg << "LinkTracksPlugin - loaded image " << filename << endl;
   }
 
   ifs.close();
