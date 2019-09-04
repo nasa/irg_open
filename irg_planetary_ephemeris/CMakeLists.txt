@@ -14,12 +14,14 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   tf2
   tf2_ros
+  irg_spice
 )
 
 ## System dependencies are found with CMake's conventions
 find_package(Boost REQUIRED COMPONENTS system)
-find_package(yaml-cpp REQUIRED COMPONENTS system)
 
+find_package(PkgConfig)
+pkg_check_modules(YAMLCPP REQUIRED yaml-cpp>=0.5)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -105,12 +107,12 @@ find_package(yaml-cpp REQUIRED COMPONENTS system)
 ## LIBRARIES: libraries you create in this project that dependent projects also need
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
-# catkin_package(
+catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES irg_gazebo_plugins
-#   CATKIN_DEPENDS roscpp std_msgs tf2 tf2_ros
+  CATKIN_DEPENDS roscpp std_msgs tf2 tf2_ros irg_spice
 #  DEPENDS system_lib
-# )
+)
 
 ###########
 ## Build ##
