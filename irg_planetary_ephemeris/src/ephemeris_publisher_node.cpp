@@ -354,9 +354,11 @@ main(int argc, char *argv[])
 				 mission_lat, mission_lon, mission_elev,
 				 leapSecondKernelPath, constantsKernelPath, 
 				 ephemerisPaths))
+    {
       cerr << "FATAL ERROR [main()]: "
 	   << "unable to read all ROS run time parameters. Exiting." << endl;
-    exit(-1);
+      exit(-1);
+    }
   }
   
   Ephemeris ephemeris(leapSecondKernelPath, constantsKernelPath, ephemerisPaths);
