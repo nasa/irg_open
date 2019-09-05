@@ -61,6 +61,8 @@ private:
   Ogre::Camera* m_cameras[6];
   Ogre::Viewport* m_viewports[6];
 
+  Ogre::ColourValue m_background_color;
+
   std::unique_ptr<CubemapFilter> m_cubemap_filter;
 };
 
