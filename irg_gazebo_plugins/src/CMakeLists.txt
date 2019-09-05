@@ -6,4 +6,5 @@ add_subdirectory(IRGLightFrustaPlugin)
 add_subdirectory(IRGNearFarClipPlugin)
 add_subdirectory(IRGReloadShadersPlugin)
 add_subdirectory(IRGShadowParametersPlugins)
+add_subdirectory(IRGVisibilityPlugin)
 

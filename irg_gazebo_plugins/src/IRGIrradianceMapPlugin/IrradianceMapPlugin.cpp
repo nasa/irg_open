@@ -33,6 +33,12 @@ IrradianceMapPlugin::IrradianceMapPlugin() :
 
   m_texture.setNull();
 
+  m_use_visibility_bitmask = false;
+
+  // Lux from starlight is 0.00022 according to
+  // https://www.researchgate.net/publication/238589855_Night_illumination_in_the_visible_NIR_and_SWIR_spectral_bands
+  m_background_color = ColourValue(0.00022f, 0.00022f, 0.00022f, 1.0f);
+
   // Initialize ros, if it has not already been initialized.
   if (!ros::isInitialized())
   {
@@ -51,19 +57,36 @@ IrradianceMapPlugin::~IrradianceMapPlugin()
 
 void IrradianceMapPlugin::Load(rendering::VisualPtr visual, sdf::ElementPtr element)
 {
-  if (!element->HasElement("texture_unit")) {
-    gzerr << "IrradianceMapPlugin: you must specify a texture_unit_state element." << endl;
+  if (!element->HasElement("texture_unit"))
+  {
+    gzerr << "IrradianceMapPlugin::Load: you must specify a texture_unit_state element." << endl;
     return;
   }
   m_texture_unit_name = element->Get<string>("texture_unit");
+
+  if (element->HasElement("visibility_bitmask"))
+  {
+    m_use_visibility_bitmask = true;
+    // Cannot read a hexidecimal value of the form 0x******** using element->Get().
+    // It always results in 0. Must instead use std::stoul().
+    const string mask_str = element->Get<string>("visibility_bitmask");
+    m_visibility_bitmask = std::stoul(mask_str, nullptr, 16);
+  }
+
+  if (element->HasElement("background_color"))
+  {
+    ignition::math::Vector3d color = element->GetElement("background_color")->Get<ignition::math::Vector3d>();
+    m_background_color = ColourValue(color[0], color[1], color[2], 1.0f);
+  }
 
   // Listen to the update event. This event is broadcast every sim iteration.
   this->m_update_connection = event::Events::ConnectPreRender(
     boost::bind(&IrradianceMapPlugin::onUpdate, this));
 
   rendering::ScenePtr scene = rendering::get_scene();
-  if (!scene) {
-    gzerr << "IrradianceMapPlugin::initialize: scene pointer is NULL" << endl;
+  if (!scene)
+  {
+    gzerr << "IrradianceMapPlugin::Load: scene pointer is NULL" << endl;
     return;
   }
 
@@ -127,12 +150,12 @@ void IrradianceMapPlugin::Load(rendering::VisualPtr visual, sdf::ElementPtr elem
     m_viewports[i] = renderTarget->addViewport(m_cameras[i]);
     m_viewports[i]->setOverlaysEnabled(false);
     m_viewports[i]->setClearEveryFrame(true);
-    m_viewports[i]->setBackgroundColour(ColourValue::Black);
+    m_viewports[i]->setBackgroundColour(m_background_color);
   }
 
   m_cubemap_filter.reset(new CubemapFilter(m_unique_index, source_cubemap_name));
 
-  gzlog << "IrradianceMapPlugin::initialize: complete." << endl;
+  gzlog << "IrradianceMapPlugin::Load: complete." << endl;
 }
 
 void IrradianceMapPlugin::onUpdate()
@@ -151,9 +174,26 @@ void IrradianceMapPlugin::onUpdate()
     return;
   }
 
+  rendering::ScenePtr scene = rendering::get_scene();
+  uint32_t original_visibility_bitmask;
+  if(m_use_visibility_bitmask && scene)
+  {
+    // Use a user-defined visibility mask to limit what is rendered into the
+    // irradiance map.
+    SceneManager* scene_manager = scene->OgreSceneManager();
+    original_visibility_bitmask = scene_manager->getVisibilityMask();
+    scene_manager->setVisibilityMask(m_visibility_bitmask);
+  }
+
   for (int i = 0; i < 6; i++)
   {
     m_cameras[i]->_renderScene(m_viewports[i], false);
+  }
+
+  if(m_use_visibility_bitmask && scene)
+  {
+    // Restore original visibility mask
+    scene->OgreSceneManager()->setVisibilityMask(original_visibility_bitmask);
   }
 
   // Ogre 1.9 does not appear to generate mipmaps for dynamic textures. It uses

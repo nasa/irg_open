@@ -46,6 +46,12 @@ private:
 
   Ogre::String m_texture_unit_name;
 
+  // This mask will interact with Ogre3D's visibility flags, which can be set
+  // with gazebo::rendering::Visual::setVisibilityFlags(). The result of and-ing
+  // this mask with that one will determine whether a visual is rendered.
+  uint32_t m_visibility_bitmask;
+  bool m_use_visibility_bitmask;
+
   // Connection to the update event
   gazebo::event::ConnectionPtr m_update_connection;
 
@@ -54,6 +60,8 @@ private:
   // Cameras and viewports for capturing the scene
   Ogre::Camera* m_cameras[6];
   Ogre::Viewport* m_viewports[6];
+
+  Ogre::ColourValue m_background_color;
 
   std::unique_ptr<CubemapFilter> m_cubemap_filter;
 };

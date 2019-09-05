@@ -7,7 +7,6 @@
 #include <cspice/SpiceUsr.h>
 #include <cspice/SpiceZfc.h>
 
-
 using namespace ow;
 using namespace std;
 
