@@ -57,6 +57,7 @@ inline std::string ros_time_to_string(ros::Time ros_time)
   return time_string.str();
 }
 
+// Deprecated
 string tolower_string(string the_string)
 {
   transform(the_string.begin(), the_string.end(), the_string.begin(), 
@@ -71,11 +72,7 @@ make_time_stamped_transform(const std::string &reference_body,
 			    float64_ow spice_transform[16])
 {
   const double KM_TO_M = 1000.0; // Convert from kilometers to meters
-
-  // Frame names are just lower case versions of NAIF body names.
   string reference_frame_name = reference_body, target_frame_name = target_body;
-  tolower_string(reference_frame_name);
-  tolower_string(target_frame_name);
   
   geometry_msgs::Transform transform_msg;
   geometry_msgs::TransformStamped time_stamped_transform_msg;
@@ -143,6 +140,7 @@ path_exists(const char *path)
   return (stat(path, &path_status) == 0);
 }
 
+// Deprecated
 bool
 have_run_parameters_file(int argc, char *argv[], ros::NodeHandle &nodeHandle,
 			 string &run_parameters_filename)
@@ -159,6 +157,29 @@ have_run_parameters_file(int argc, char *argv[], ros::NodeHandle &nodeHandle,
     if (options.GetOptionInfo('f')->IsSet())
       run_parameters_filename = options.GetOptionInfo('f')->GetValuesString();
   }
+  if (!path_exists(run_parameters_filename.c_str()))
+  {
+    run_parameters_filename = "";
+    return false;
+  }
+
+  return true;
+}
+
+bool
+have_non_ros_paramater_file_option(int argc, char *argv[],
+				   string &run_parameters_filename)
+{
+  run_parameters_filename = "";
+  
+  // Check for non-ROS command line args
+  Options options;
+  options.Add('f', "run parameters file name.\n", "string", 1);
+  int firstArgIndex = HandleOptions(argc, argv, options, 0, "");
+  if (!options.GetOptionInfo('f')->IsSet())
+    return false;
+  
+  run_parameters_filename = options.GetOptionInfo('f')->GetValuesString();
   if (!path_exists(run_parameters_filename.c_str()))
   {
     run_parameters_filename = "";
@@ -244,6 +265,42 @@ read_run_parameters(const string &run_parameters_filename, string &reference_bod
   return true;
 }
 
+bool
+read_ros_run_parameters(ros::NodeHandle nodeHandle, string &reference_body,
+			vector<string> &target_bodies,
+			float64_ow &mission_lat, float64_ow &mission_lon,
+			float64_ow &mission_elev,
+			string &leapSecondKernelPath, string &constantsKernelPath, 
+			vector<string> &ephemerisPaths)
+{
+  if (!nodeHandle.getParam("reference_body", reference_body))
+    return false;
+  
+  if (!nodeHandle.getParam("target_bodies", target_bodies))
+    return false;
+  
+  if (!nodeHandle.getParam("mission_lat", mission_lat))
+    return false;
+  
+  if (!nodeHandle.getParam("mission_lon", mission_lon))
+    return false;
+
+  mission_elev = 0.0;
+  if (!nodeHandle.getParam("mission_elev", mission_elev))
+    ROS_INFO_STREAM("WARNING [read_ros_run_parameters()]: "
+		    "no mission elevation specified, assuming elevation = 0");
+
+  if (!nodeHandle.getParam("leap_second_kernel", leapSecondKernelPath))
+    return false;
+  
+  if (!nodeHandle.getParam("constants_kernel", constantsKernelPath))
+    return false;
+  
+  if (!nodeHandle.getParam("ephemerides", ephemerisPaths))
+    return false;
+
+  return true;
+}
 
 int
 main(int argc, char *argv[])
@@ -273,7 +330,12 @@ main(int argc, char *argv[])
   float64_ow mission_lat, mission_lon, mission_elev;
   string leapSecondKernelPath, constantsKernelPath;
   vector<string> ephemerisPaths;
-  if (have_run_parameters_file(argc, argv, nodeHandle, run_parameters_filename))
+
+  set_default_run_parameters(reference_body, target_bodies,
+			     mission_lat, mission_lon, mission_elev,
+			     leapSecondKernelPath, constantsKernelPath, 
+			     ephemerisPaths);
+  if (have_non_ros_paramater_file_option(argc, argv, run_parameters_filename))
   {
     if (!read_run_parameters(run_parameters_filename,
 			     reference_body, target_bodies,
@@ -288,11 +350,15 @@ main(int argc, char *argv[])
   }
   else
   {
-    set_default_run_parameters(reference_body, target_bodies,
-			       mission_lat, mission_lon, mission_elev,
-			       leapSecondKernelPath, constantsKernelPath, 
-			       ephemerisPaths);
+    if (!read_ros_run_parameters(nodeHandle, reference_body, target_bodies,
+				 mission_lat, mission_lon, mission_elev,
+				 leapSecondKernelPath, constantsKernelPath, 
+				 ephemerisPaths))
+      cerr << "FATAL ERROR [main()]: "
+	   << "unable to read all ROS run time parameters. Exiting." << endl;
+    exit(-1);
   }
+  
   Ephemeris ephemeris(leapSecondKernelPath, constantsKernelPath, ephemerisPaths);
   
   // Broadcasting loop
