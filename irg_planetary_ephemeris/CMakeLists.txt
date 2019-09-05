@@ -18,17 +18,11 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 ## System dependencies are found with CMake's conventions
-find_package(Boost REQUIRED COMPONENTS system)
-<<<<<<< HEAD
-=======
-find_package(yaml-cpp REQUIRED COMPONENTS system)
-pkg_check_modules(YAMLCPP REQUIRED yaml-cpp>=0.5)
+#find_package(Boost REQUIRED COMPONENTS system)
+#find_package(yaml-cpp REQUIRED COMPONENTS system)
 
-find_package(PkgConfig)
->>>>>>> master
-
-find_package(PkgConfig)
-pkg_check_modules(YAMLCPP REQUIRED yaml-cpp>=0.5)
+#find_package(PkgConfig)
+#pkg_check_modules(YAMLCPP REQUIRED yaml-cpp>=0.5)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
