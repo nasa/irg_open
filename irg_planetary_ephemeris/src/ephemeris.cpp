@@ -45,7 +45,7 @@ Ephemeris::Ephemeris(const string& leapSecondKernelPath,
   m_ephemerisHandle = 0;
   m_leapSecondKernelPath = leapSecondKernelPath;
   m_constantsKernelPath = constantsKernelPath;
-  for (int i; i < ephemerisPaths.size(); ++i)
+  for (int i = 0; i < ephemerisPaths.size(); ++i)
     m_ephemerisPaths.push_back(ephemerisPaths[i]);
 
   // Set the SPICELIB error response action to "RETURN":
