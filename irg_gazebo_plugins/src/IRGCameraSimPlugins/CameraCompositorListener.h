@@ -6,8 +6,8 @@
 #ifndef CameraCompositorListener_h
 #define CameraCompositorListener_h
 
-#include <ros/ros.h>
-#include <std_msgs/Float64.h>
+#include "rclcpp/rclcpp.hpp"
+#include "std_msgs/msg/float64.hpp"
 #include <gazebo/rendering/ogre_gazebo.h>
 #include <sdf/Element.hh>
 
@@ -34,9 +34,9 @@ private:
   void initParam(std::string name, double initial_value);
 
   /// \brief Subscriber callback that allows user to set a param
-  void onParamUpdate(const std_msgs::Float64::ConstPtr& msg, std::string name);
+  void onParamUpdate(const std_msgs::msg::Float64::SharedPtr msg, std::string name);
 
-  std::unique_ptr<ros::NodeHandle> m_node_handle;
+  rclcpp::Node::SharedPtr m_node_handle;
 
   std::string m_topic_uid;
 
@@ -44,7 +44,7 @@ private:
   struct ParamData
   {
     Ogre::Real m_value;
-    ros::Subscriber m_subscriber;
+    rclcpp::Subscription<std_msgs::msg::Float64>::ConstSharedPtr m_subscriber;
   };
   std::map<std::string, ParamData> m_param_map;
 };

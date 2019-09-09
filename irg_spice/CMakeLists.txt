@@ -1,16 +1,18 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.5)
 project(irg_spice)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED)
+find_package(ament_cmake REQUIRED)
 
 ###########
 ## Fetch ##
 ###########
 
-set(BUILD_FOLDER "${CATKIN_DEVEL_PREFIX}/../../../build/irg_spice")
+# TODO: Should be a real variable!
+set(BUILD_FOLDER "${CMAKE_CURRENT_SOURCE_DIR}/../../build/irg_spice") 
+
 
 # Warning: The MD5 will break whenever they update the tarball!
 set(PACKAGE_URL http://naif.jpl.nasa.gov/pub/naif/toolkit/C/PC_Linux_GCC_64bit/packages/cspice.tar.Z)
@@ -56,33 +58,18 @@ file(GLOB libFiles  "${UNPACK_FOLDER}/lib/*.a"    )
 file(GLOB incFiles  "${UNPACK_FOLDER}/include/*.h")
 file(GLOB dataFiles "${UNPACK_FOLDER}/data/*"     )
 
-# Copy the files to the devel folder
-file(MAKE_DIRECTORY ${CATKIN_DEVEL_PREFIX}/include/cspice)
-file(MAKE_DIRECTORY ${CATKIN_DEVEL_PREFIX}/data)
-file(COPY ${libFiles}  DESTINATION ${CATKIN_DEVEL_PREFIX}/lib)
-file(COPY ${incFiles}  DESTINATION ${CATKIN_DEVEL_PREFIX}/include/cspice)
-file(COPY ${dataFiles} DESTINATION ${CATKIN_DEVEL_PREFIX}/data)
-
-###################################
-## catkin specific configuration ##
-###################################
-## The catkin_package macro generates cmake config files for your package
-## Declare things to be passed to dependent projects
-## INCLUDE_DIRS: uncomment this if your package contains header files
-## LIBRARIES: libraries you create in this project that dependent projects also need
-## CATKIN_DEPENDS: catkin_packages dependent projects also need
-## DEPENDS: system dependencies of this project that dependent projects also need
-catkin_package(
-  INCLUDE_DIRS ${CATKIN_DEVEL_PREFIX}/include
-  LIBRARIES ${CATKIN_DEVEL_PREFIX}/lib/cspice.a ${CATKIN_DEVEL_PREFIX}/lib/csupport.a
-#  CATKIN_DEPENDS other_catkin_pkg
-#  DEPENDS system_lib
-)
 
 #############
 ## Install ##
 #############
 
-install(FILES ${libFiles}  DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
-install(FILES ${incFiles}  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
-install(FILES ${dataFiles} DESTINATION ${CATKIN_GLOBAL_SHARE_DESTINATION})
+install(FILES ${incFiles}  DESTINATION include/${PROJECT_NAME})
+install(FILES ${dataFiles} DESTINATION share)
+install(FILES ${libFiles}  DESTINATION lib)
+
+ament_export_include_directories(include/${PROJECT_NAME})
+ament_export_libraries(lib/cspice.a lib/csupport.a)
+
+
+ament_package()
+

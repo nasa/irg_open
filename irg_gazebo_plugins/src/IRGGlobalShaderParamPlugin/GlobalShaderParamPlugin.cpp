@@ -13,7 +13,7 @@
 #include <OgrePass.h>
 #include <OgreTechnique.h>
 
-#include <ros/console.h>
+//#include <ros/console.h>
 
 using namespace irg;
 using namespace std;
@@ -34,11 +34,11 @@ GlobalShaderParamPlugin::GlobalShaderParamPlugin() :
   m_hasUpdates(false),
   m_cacheCleared(true)
 {
-  m_nodeHandle.reset(new ros::NodeHandle("gazebo_global_shader_param_plugin"));
+  m_nodeHandle = rclcpp::Node::make_shared("gazebo_global_shader_param_plugin");
   
-  if( ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Debug) ) {
-   ros::console::notifyLoggerLevelsChanged();
-  }
+  //if( ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Debug) ) {
+  // ros::console::notifyLoggerLevelsChanged();
+  //}
 //   gzmsg << "## GlobalShaderParamPlugin ctor" << std::endl;
 //   std::cerr << "## GlobalShaderParamPlugin ctor" << std::endl;
 //   ROS_INFO("-- GlobalShaderParamPlugin ctor (Visual Plugin)");
@@ -50,9 +50,9 @@ GlobalShaderParamPlugin::~GlobalShaderParamPlugin()
 
 inline int8_t shaderTypeFromString(const std::string& str) {
   if(str.compare("vertex") == 0)
-    return ShaderParamUpdate::SHADER_TYPE_VERTEX;
+    return msg::ShaderParamUpdate::SHADER_TYPE_VERTEX;
   if(str.compare("fragment") == 0)
-    return ShaderParamUpdate::SHADER_TYPE_FRAGMENT;
+    return msg::ShaderParamUpdate::SHADER_TYPE_FRAGMENT;
   gzerr << "GlobalShaderParamPlugin: shader type string \"" << str << "\" is not recognized\n";
   return -1;
 }
@@ -80,9 +80,11 @@ void GlobalShaderParamPlugin::Load(rendering::VisualPtr _sensor, sdf::ElementPtr
   }
     
   std::string topic("/gazebo/global_shader_param");
-  m_subscriber = m_nodeHandle->subscribe(topic, 20,
-      &GlobalShaderParamPlugin::onShaderParamUpdate, this);
-
+  m_subscriber
+   = m_nodeHandle->create_subscription<irg_gazebo_plugins::msg::ShaderParamUpdate>(
+          topic,
+          std::bind(&GlobalShaderParamPlugin::onShaderParamUpdate, this, std::placeholders::_1));
+  
   //-- connection callbacks ---------------
   m_preRenderConnection = event::Events::ConnectPreRender(
       boost::bind(&GlobalShaderParamPlugin::onPreRender, this));
@@ -101,11 +103,12 @@ void GlobalShaderParamPlugin::Load(rendering::VisualPtr _sensor, sdf::ElementPtr
 /**
  * 
  */
-void GlobalShaderParamPlugin::onShaderParamUpdate(const irg_gazebo_plugins::ShaderParamUpdate::ConstPtr& msg)
+void GlobalShaderParamPlugin::onShaderParamUpdate(const
+      irg_gazebo_plugins::msg::ShaderParamUpdate::SharedPtr msg)
 {
   Lock guard(m_mutex);
-  const std::string& paramName = msg->paramName;
-  const int8_t shaderType = msg->shaderType;
+  const std::string& paramName = msg->param_name;
+  const int8_t shaderType = msg->shader_type;
   if(paramName.length() == 0) {
     clearCache();
   }
@@ -115,7 +118,7 @@ void GlobalShaderParamPlugin::onShaderParamUpdate(const irg_gazebo_plugins::Shad
       clearCache();
     }
     m_paramsListMap[shaderType][paramName]; // ensure key exists
-    m_paramUpdateMap[shaderType][paramName] = msg->paramValue;
+    m_paramUpdateMap[shaderType][paramName] = msg->param_value;
   }
   m_hasUpdates = true;
 }
@@ -141,7 +144,7 @@ void GlobalShaderParamPlugin::onWorldCreated()
 void GlobalShaderParamPlugin::clearCache()
 {
   Lock guard(m_mutex);
-  for(int i = 0; i < ShaderParamUpdate::NUM_SHADER_TYPES; i++) {
+  for(int i = 0; i < msg::ShaderParamUpdate::NUM_SHADER_TYPES; i++) {
     for(auto& pair : m_paramsListMap[i]) { 
         pair.second.clear();
     }
@@ -154,7 +157,7 @@ void GlobalShaderParamPlugin::clearCache()
  */
 void GlobalShaderParamPlugin::buildCache() 
 {
-  for(int shaderType = 0; shaderType < ShaderParamUpdate::NUM_SHADER_TYPES; shaderType++) {
+  for(int shaderType = 0; shaderType < msg::ShaderParamUpdate::NUM_SHADER_TYPES; shaderType++) {
     for(auto& pair : m_paramsListMap[shaderType]) {
       cacheParams(shaderType, pair.first, pair.second);
     }
@@ -186,7 +189,7 @@ void GlobalShaderParamPlugin::cacheParams(int8_t shaderType , const std::string&
             if(pass && pass->isProgrammable()) {
               //ROS_INFO("* %s %d", matName.c_str(), shaderType);
               switch(shaderType) {
-                case ShaderParamUpdate::SHADER_TYPE_VERTEX:
+                case msg::ShaderParamUpdate::SHADER_TYPE_VERTEX:
                   if(pass->hasVertexProgram()) {
                     Ogre::GpuProgramParametersSharedPtr gpuParams = pass->getVertexProgramParameters();
                     if(!gpuParams.isNull()) {
@@ -194,12 +197,14 @@ void GlobalShaderParamPlugin::cacheParams(int8_t shaderType , const std::string&
                       const GpuConstantDefinition* paramDef = gpuParams->_findNamedConstantDefinition(paramName);
                       if(paramDef) {
                         paramsList.push_back(gpuParams);
-                        ROS_INFO("-- %s found in %d program : %s (%p)", paramName.c_str(), shaderType, matName.c_str(), gpuParams.get());
+                        RCLCPP_INFO(m_nodeHandle->get_logger(),
+                                    "-- %s found in %d program : %s (%p)",
+                                    paramName.c_str(), shaderType, matName.c_str(), gpuParams.get());
                       }
                     }
                   }
                   break;
-                case ShaderParamUpdate::SHADER_TYPE_FRAGMENT:
+                case msg::ShaderParamUpdate::SHADER_TYPE_FRAGMENT:
                   if(pass->hasFragmentProgram()) {
                     Ogre::GpuProgramParametersSharedPtr gpuParams = pass->getFragmentProgramParameters();
                     if(!gpuParams.isNull()) {
@@ -207,7 +212,9 @@ void GlobalShaderParamPlugin::cacheParams(int8_t shaderType , const std::string&
                       const GpuConstantDefinition* paramDef = gpuParams->_findNamedConstantDefinition(paramName);
                       if(paramDef) {
                         paramsList.push_back(gpuParams);
-                        ROS_INFO("-- %s found in %d program : %s (%p)", paramName.c_str(), shaderType, matName.c_str(), gpuParams.get());
+                        RCLCPP_INFO(m_nodeHandle->get_logger(),
+                                    "-- %s found in %d program : %s (%p)",
+                                    paramName.c_str(), shaderType, matName.c_str(), gpuParams.get());
                       }
                     }
                   }
@@ -219,7 +226,8 @@ void GlobalShaderParamPlugin::cacheParams(int8_t shaderType , const std::string&
       }
     }
   }
-  ROS_INFO("GlobalShaderParamPlugin::cacheParams(%s, %ld)", paramName.c_str(), paramsList.size());
+  RCLCPP_INFO(m_nodeHandle->get_logger(), "GlobalShaderParamPlugin::cacheParams(%s, %ld)",
+              paramName.c_str(), paramsList.size());
 }
 
 
@@ -236,7 +244,7 @@ void GlobalShaderParamPlugin::onPreRender()
       m_cacheCleared = false;
     }
     
-    for(int8_t shaderType = 0; shaderType < ShaderParamUpdate::NUM_SHADER_TYPES; shaderType++) {
+    for(int8_t shaderType = 0; shaderType < msg::ShaderParamUpdate::NUM_SHADER_TYPES; shaderType++) {
       for(auto& pair : m_paramUpdateMap[shaderType]) {
         const std::string& name = pair.first;
         const std::string& value = pair.second;

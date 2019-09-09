@@ -4,8 +4,9 @@
 #include <cmath>
 
 // SPICE includes
-#include <cspice/SpiceUsr.h>
-#include <cspice/SpiceZfc.h>
+#include "SpiceUsr.h"
+#include "SpiceZfc.h"
+
 
 using namespace ow;
 using namespace std;

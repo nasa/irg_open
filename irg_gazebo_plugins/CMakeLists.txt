@@ -1,18 +1,19 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.5.0)
 project(irg_gazebo_plugins)
+
+set(CMAKE_CXX_STANDARD 14)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS
-  roscpp
-  std_msgs
-  tf2
-  tf2_ros
-)
-
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
 find_package(gazebo REQUIRED)
 find_package(OGRE REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
 
 if("${GAZEBO_MAJOR_VERSION}" STREQUAL "9")
   message(STATUS "FOUND QT 5")
@@ -35,10 +36,8 @@ else()
   include_directories(SYSTEM "${QT_QTCORE_INCLUDE_DIR}")
 endif()
 
-catkin_add_env_hooks(
-  65.irg_gazebo_plugins
-  SHELLS sh DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/env-hooks
-)
+# mallan: add plugins env
+ament_environment_hooks(${CMAKE_CURRENT_SOURCE_DIR}/env-hooks/65.irg_gazebo_plugins.sh.in)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -73,11 +72,13 @@ catkin_add_env_hooks(
 ##   * uncomment the generate_messages entry below
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
-## Generate messages in the 'msg' folder
-add_message_files(
-  FILES
-  ShaderParamUpdate.msg
+# Generate messages in the 'msg' folder
+rosidl_generate_interfaces(${PROJECT_NAME}
+  msg/ShaderParamUpdate.msg
+  DEPENDENCIES
+  std_msgs
 )
+
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -93,11 +94,6 @@ add_message_files(
 #   Action2.action
 # )
 
-## Generate added messages and services with any dependencies listed here
-generate_messages(
-  DEPENDENCIES
-  std_msgs
-)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -128,12 +124,13 @@ generate_messages(
 ## LIBRARIES: libraries you create in this project that dependent projects also need
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
-catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES irg_gazebo_plugins
-  CATKIN_DEPENDS roscpp std_msgs tf2 tf2_ros
-#  DEPENDS system_lib
-)
+#catkin_package(
+##  INCLUDE_DIRS include
+##  LIBRARIES irg_gazebo_plugins
+#  CATKIN_DEPENDS roscpp std_msgs tf2 tf2_ros
+##  DEPENDS system_lib
+#)
+ament_export_dependencies(rclcpp std_msgs rosidl_default_generators rosidl_default_runtime tf2 tf2_ros)
 
 ###########
 ## Build ##
@@ -143,8 +140,10 @@ catkin_package(
 ## Your package locations should be listed before other locations
 # include_directories(include)
 include_directories(
-  ${catkin_INCLUDE_DIRS}
+  ${rclcpp_INCLUDE_DIRS}
 )
 
 
 add_subdirectory(src)
+
+ament_package()

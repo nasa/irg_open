@@ -10,8 +10,8 @@
 #include <gazebo/common/Plugin.hh>
 #include <gazebo/common/common.hh>
 #include "CubemapFilter.h"
-#include <ros/ros.h>
-#include <std_msgs/String.h>
+#include "rclcpp/rclcpp.hpp"
+#include <std_msgs/msg/string.h>
 #include <OGRE/OgreCamera.h>
 #include <OGRE/OgreTexture.h>
 

@@ -7,10 +7,10 @@
 #define GlobalShaderParamPlugin_h
 
 #include <gazebo/common/Plugin.hh>
-#include <ros/ros.h>
+#include "rclcpp/rclcpp.hpp"
 
-#include <std_msgs/String.h>
-#include <irg_gazebo_plugins/ShaderParamUpdate.h>
+#include "std_msgs/msg/string.hpp"
+#include "irg_gazebo_plugins/msg/shader_param_update.hpp"
 
 #include <map>
 #include <vector>
@@ -30,7 +30,7 @@ public:
 
 protected:
   //void onShaderUpdateMsg(const std_msgs::String::ConstPtr& msg);
-  void onShaderParamUpdate(const irg_gazebo_plugins::ShaderParamUpdate::ConstPtr& msg);
+  void onShaderParamUpdate(const irg_gazebo_plugins::msg::ShaderParamUpdate::SharedPtr msg);
 
   void onPreRender();
   void onAddEntity();
@@ -56,11 +56,11 @@ private:
   gazebo::event::ConnectionPtr m_entityDeletedConnection;
   gazebo::event::ConnectionPtr m_worldCreatedConnection;
 
-  std::unique_ptr<ros::NodeHandle> m_nodeHandle;
-  ros::Subscriber                  m_subscriber;
+  rclcpp::Node::SharedPtr m_nodeHandle;
+  rclcpp::Subscription<irg_gazebo_plugins::msg::ShaderParamUpdate>::ConstSharedPtr m_subscriber;
 
-  std::map<std::string,GpuProgramParamsList> m_paramsListMap[irg_gazebo_plugins::ShaderParamUpdate::NUM_SHADER_TYPES];
-  std::map<std::string,std::string>          m_paramUpdateMap[irg_gazebo_plugins::ShaderParamUpdate::NUM_SHADER_TYPES];
+  std::map<std::string,GpuProgramParamsList> m_paramsListMap[irg_gazebo_plugins::msg::ShaderParamUpdate::NUM_SHADER_TYPES];
+  std::map<std::string,std::string>          m_paramUpdateMap[irg_gazebo_plugins::msg::ShaderParamUpdate::NUM_SHADER_TYPES];
 
   typedef std::recursive_mutex Mutex;
   typedef std::lock_guard<std::recursive_mutex> Lock;

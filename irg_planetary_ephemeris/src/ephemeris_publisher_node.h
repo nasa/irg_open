@@ -11,18 +11,21 @@ namespace ow
   public:
     EphemerisPublisherNode()
     {
-      ros::NodeHandle nodeHandle;
+      //TODO: If this is used somewhere, probably want to pass in this node handle!
+      m_node_handle = rclcpp::Node::make_shared("ephemeris_publisher");
       // Set the transform update rate
       std::string publishPeriodString;
       int publishPeriod;
-      if (nodeHandle.getParam("ephemeris_publisher_period", publishPeriodString))
-	publishPeriod = atoi(publishPeriodString.c_str());
+      if (m_node_handle->getParam("ephemeris_publisher_period", publishPeriodString))
+        publishPeriod = atoi(publishPeriodString.c_str());
       else
-	publishPeriod = 5; // The default period
-      ROS_INFO_STREAM("Setting publish period to " << publishPeriod);
-      ros::Rate publishRate(publishPeriod);
+        publishPeriod = 5; // The default period
+      RCLCPP_INFO(m_node_handle->get_logger(),
+                  "Setting publish period to " << publishPeriod);
+      rclcpp::Rate publishRate(publishPeriod);
     }
   private:
+    rclcpp::Node::SharedPtr m_node_handle;
     Ephemeris m_ephemeris;
     tf2_ros::TransformBroadcaster m_broadcaster;
     tf2_ros::StaticTransformBroadcaster m_static_broadcaster;

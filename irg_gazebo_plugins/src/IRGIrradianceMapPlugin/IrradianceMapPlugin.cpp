@@ -40,12 +40,13 @@ IrradianceMapPlugin::IrradianceMapPlugin() :
   m_background_color = ColourValue(0.00022f, 0.00022f, 0.00022f, 1.0f);
 
   // Initialize ros, if it has not already been initialized.
-  if (!ros::isInitialized())
+  if (!rclcpp::is_initialized)
   {
     int argc = 0;
     char** argv = NULL;
-    ros::init(argc, argv, "gazebo_client",
-      ros::init_options::NoSigintHandler);
+    //ros::init(argc, argv, "gazebo_client",
+    //  ros::init_options::NoSigintHandler);
+    rclcpp::init(argc, argv);
   }
 
   m_timer.Start();

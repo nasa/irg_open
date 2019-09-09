@@ -7,13 +7,13 @@
 
 #include <yaml-cpp/yaml.h>
 
-#include <ros/ros.h>
-#include <std_msgs/String.h>
+#include "rclcpp/rclcpp.hpp"
+#include <std_msgs/msg/string.hpp>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Transform.h>
 #include <tf2_ros/transform_broadcaster.h>
 #include <tf2_ros/static_transform_broadcaster.h>
-#include <geometry_msgs/TransformStamped.h>
+#include <geometry_msgs/msg/transform_stamped.hpp>
 
 #include "ephemeris.h"
 #include "handle-options.h"
@@ -37,7 +37,23 @@ check_ros_environment()
   }
 }
 
-inline std::string ros_time_to_string(ros::Time ros_time)
+/// Convert a ros::Time into a builtin_interfaces::msg::Time
+inline builtin_interfaces::msg::Time ros_time_to_builtin_time(rclcpp::Time ros_time)
+{
+  const long unsigned int nanosec_per_sec = 1000LL * 1000LL * 1000LL;
+
+  builtin_interfaces::msg::Time output;
+  unsigned long int nsec   = ros_time.nanoseconds();
+  unsigned long int sec    = nsec / nanosec_per_sec;
+  unsigned long int sec_ns = sec * nanosec_per_sec;
+  output.nanosec = nsec - sec_ns;
+  output.sec = sec;
+
+  return output;
+}
+
+
+inline std::string ros_time_to_string(builtin_interfaces::msg::Time ros_time)
 {
   // Convert epoch time to time_t format
   time_t epoch_time = ros_time.sec;
@@ -49,7 +65,7 @@ inline std::string ros_time_to_string(ros::Time ros_time)
 
   // Now get the fractional component
   const long int NANOSECONDS_PER_MILLISECOND = 1000000;
-  const long int milliseconds = ros_time.nsec / NANOSECONDS_PER_MILLISECOND;
+  const long int milliseconds = ros_time.nanosec / NANOSECONDS_PER_MILLISECOND;
 
   std::stringstream time_string;
   time_string << timestamp << "." << milliseconds;
@@ -65,17 +81,17 @@ string tolower_string(string the_string)
   return the_string;
 }
 
-geometry_msgs::TransformStamped
+geometry_msgs::msg::TransformStamped
 make_time_stamped_transform(const std::string &reference_body,
 			    const std::string &target_body,
-			    const ros::Time &ros_time,
+			    const builtin_interfaces::msg::Time &ros_time,
 			    float64_ow spice_transform[16])
 {
   const double KM_TO_M = 1000.0; // Convert from kilometers to meters
   string reference_frame_name = reference_body, target_frame_name = target_body;
   
-  geometry_msgs::Transform transform_msg;
-  geometry_msgs::TransformStamped time_stamped_transform_msg;
+  geometry_msgs::msg::Transform transform_msg;
+  geometry_msgs::msg::TransformStamped time_stamped_transform_msg;
 
   tf2::Matrix3x3 rotation_matrix(spice_transform[0], spice_transform[1], spice_transform[2],
 				 spice_transform[4], spice_transform[5], spice_transform[6], 
@@ -106,11 +122,11 @@ make_time_stamped_transform(const std::string &reference_body,
 }
 
 void
-broadcast_transforms(tf2_ros::TransformBroadcaster broadcaster,
+broadcast_transforms(tf2_ros::TransformBroadcaster& broadcaster,
 		     const string& reference_body,
 		     const float64_ow lat, const float64_ow lon,
 		     const vector<string> &target_bodies,
-		     const ros::Time &ros_time,
+		     const builtin_interfaces::msg::Time &ros_time,
 		     Ephemeris &ephemeris)
 {
   string time_string = ros_time_to_string(ros_time);
@@ -123,7 +139,7 @@ broadcast_transforms(tf2_ros::TransformBroadcaster broadcaster,
 					   target_bodies[i], time_string,
 					   spice_transform);
 
-    geometry_msgs::TransformStamped time_stamped_transform_msg =
+    geometry_msgs::msg::TransformStamped time_stamped_transform_msg =
       make_time_stamped_transform(reference_body, target_bodies[i], 
 				  ros_time, spice_transform);
 
@@ -142,13 +158,13 @@ path_exists(const char *path)
 
 // Deprecated
 bool
-have_run_parameters_file(int argc, char *argv[], ros::NodeHandle &nodeHandle,
+have_run_parameters_file(int argc, char *argv[], rclcpp::Node::SharedPtr nodeHandle,
 			 string &run_parameters_filename)
 {
   run_parameters_filename = "run_parameters.yaml";
     
   // Check for run parameter file arg passed via rosrun or roslaunch:
-  if (!nodeHandle.getParam("run_parameters_file", run_parameters_filename))
+  if (!nodeHandle->get_parameter("run_parameters_file", run_parameters_filename))
   {
     // Check for non-ROS command line args
     Options options;
@@ -266,37 +282,38 @@ read_run_parameters(const string &run_parameters_filename, string &reference_bod
 }
 
 bool
-read_ros_run_parameters(ros::NodeHandle nodeHandle, string &reference_body,
+read_ros_run_parameters(rclcpp::Node::SharedPtr nodeHandle, string &reference_body,
 			vector<string> &target_bodies,
 			float64_ow &mission_lat, float64_ow &mission_lon,
 			float64_ow &mission_elev,
 			string &leapSecondKernelPath, string &constantsKernelPath, 
 			vector<string> &ephemerisPaths)
 {
-  if (!nodeHandle.getParam("reference_body", reference_body))
+  if (!nodeHandle->get_parameter("reference_body", reference_body))
     return false;
   
-  if (!nodeHandle.getParam("target_bodies", target_bodies))
+  if (!nodeHandle->get_parameter("target_bodies", target_bodies))
     return false;
   
-  if (!nodeHandle.getParam("mission_lat", mission_lat))
+  if (!nodeHandle->get_parameter("mission_lat", mission_lat))
     return false;
   
-  if (!nodeHandle.getParam("mission_lon", mission_lon))
+  if (!nodeHandle->get_parameter("mission_lon", mission_lon))
     return false;
 
   mission_elev = 0.0;
-  if (!nodeHandle.getParam("mission_elev", mission_elev))
-    ROS_INFO_STREAM("WARNING [read_ros_run_parameters()]: "
-		    "no mission elevation specified, assuming elevation = 0");
+  if (!nodeHandle->get_parameter("mission_elev", mission_elev))
+    RCLCPP_INFO(nodeHandle->get_logger(),
+                "WARNING [read_ros_run_parameters()]: "
+                "no mission elevation specified, assuming elevation = 0");
 
-  if (!nodeHandle.getParam("leap_second_kernel", leapSecondKernelPath))
+  if (!nodeHandle->get_parameter("leap_second_kernel", leapSecondKernelPath))
     return false;
   
-  if (!nodeHandle.getParam("constants_kernel", constantsKernelPath))
+  if (!nodeHandle->get_parameter("constants_kernel", constantsKernelPath))
     return false;
   
-  if (!nodeHandle.getParam("ephemerides", ephemerisPaths))
+  if (!nodeHandle->get_parameter("ephemerides", ephemerisPaths))
     return false;
 
   return true;
@@ -310,19 +327,21 @@ main(int argc, char *argv[])
   check_ros_environment();
   
   // ROS initialization
-  ros::init(argc, argv, "ephemeris_publisher_node");
-  ros::NodeHandle nodeHandle("~");
-  tf2_ros::TransformBroadcaster broadcaster;
-  tf2_ros::StaticTransformBroadcaster static_broadcaster;
+  rclcpp::init(argc, argv);
+  rclcpp::Node::SharedPtr nodeHandle = rclcpp::Node::make_shared("ephemeris_publisher_node");
+  tf2_ros::TransformBroadcaster broadcaster(nodeHandle);
+  tf2_ros::StaticTransformBroadcaster static_broadcaster(nodeHandle);
   // Set the transform update rate
-  ROS_INFO_STREAM("Starting ephemeris publisher node!");
+  RCLCPP_INFO(nodeHandle->get_logger(),
+              "Starting ephemeris publisher node!");
   string publishPeriodString;
   int publishPeriod;
-  if (nodeHandle.getParam("ephemeris_publisher_period", publishPeriodString))
+  if (nodeHandle->get_parameter("ephemeris_publisher_period", publishPeriodString))
     publishPeriod = atoi(publishPeriodString.c_str());
   else
     publishPeriod = 5; // The default period
-  ROS_INFO_STREAM("Setting publish period to " << publishPeriod);
+  RCLCPP_INFO(nodeHandle->get_logger(),
+              "Setting publish period to ", publishPeriod);
 
   string run_parameters_filename;
   string reference_body;
@@ -365,28 +384,31 @@ main(int argc, char *argv[])
   
   // Broadcasting loop
   bool first_error = true;
-  ros::Rate publishRate(publishPeriod);
-  ROS_INFO_STREAM("Entering broadcasting loop...");
-  while (ros::ok())
+  rclcpp::Rate publishRate(publishPeriod);
+  RCLCPP_INFO(nodeHandle->get_logger(),
+              "Entering broadcasting loop...");
+  while (rclcpp::ok())
   {
     // Get the current time and make sure it is reasonable.    
-    ros::Time current_time = ros::Time::now();
-    if (current_time.sec < 400000000) // An arbitrary time very far from 0! 
+    rclcpp::Time current_time = nodeHandle->get_clock()->now();
+    if (current_time.nanoseconds() < 400000000000) // An arbitrary time far from 0! 
     {
       if (!first_error) // This always happens once in sim so suppress
 			// the first error message.
-        ROS_ERROR_STREAM("Got low value for ros::Time::now() in the solar frame publisher: "
-                         << current_time);
+        RCLCPP_ERROR(nodeHandle->get_logger(),
+                     "Got low value for ros::Time::now() in the solar frame publisher: ",
+                     current_time);
       first_error = false;
       sleep(3); // Wait to see if a valid time is published
       continue;
     }
     
+    builtin_interfaces::msg::Time builtin_time = ros_time_to_builtin_time(current_time);
     broadcast_transforms(broadcaster, reference_body, mission_lat, mission_lon,
-			 target_bodies, current_time, ephemeris);
+                         target_bodies, builtin_time, ephemeris);
     
     publishRate.sleep();
   }
   
-  ROS_INFO_STREAM("Program stopped.");
+  RCLCPP_INFO(nodeHandle->get_logger(), "Program stopped.");
 }

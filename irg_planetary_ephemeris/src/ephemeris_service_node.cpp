@@ -4,7 +4,7 @@
 using namespace ow;
 using namespace std;
 
-void EphemerisNode::callback(const std_msgs::StringConstPtr& message)
+void EphemerisNode::callback(const std_msgs::msg::String::SharedPtr message)
 {
   string referenceBodyName;
   string targetBodyName;
@@ -15,7 +15,7 @@ void EphemerisNode::callback(const std_msgs::StringConstPtr& message)
   m_ephemeris.VectorToTarget(referenceBodyName, latitude, longitude,
 			     targetBodyName, time, target_vector);
 
-  std_msgs::String str;
+  std_msgs::msg::String str;
   str.data = "hello world";
   pub.publish(str);
 }
@@ -39,18 +39,18 @@ int main(int argc, char *argv[])
   check_ros_environment();
   
   // Set up ROS
-  ros::init(argc, argv, "ephemeris_node");
+  rclcpp::init(argc, argv);
 
-  ros::NodeHandle nodeHandle;
+  rclcpp::Node::SharedPtr nodeHandle = rclcpp::Node::make_shared("ephemeris_node");
 
   EphemerisNode ephemerisNode(nodeHandle);
   
-  ROS_INFO_STREAM("Starting ephemeris node!");
+  RCLCPP_INFO(nodeHandle->get_logger(), "Starting ephemeris node!");
 
-  ROS_INFO_STREAM("Ephemeris node listening...");
+  RCLCPP_INFO(nodeHandle->get_logger(), "Ephemeris node listening...");
 
   // Wait for target vector queries
-  ros::spin();
+  rclcpp::spin();
   
-  ROS_INFO_STREAM("Ephemeris node stopped.");
+  RCLCPP_INFO(nodeHandle->get_logger(), "Ephemeris node stopped.");
 }

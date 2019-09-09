@@ -1,21 +1,21 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.5)
 project(irg_planetary_ephemeris)
 
-## Find catkin macros and libraries
-## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
-## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS
-  roscpp
-  xmlrpcpp
-  rostime
-  rosconsole
-  roscpp_serialization
-  cpp_common
-  std_msgs
-  tf2
-  tf2_ros
-  irg_spice
-)
+set(CMAKE_CXX_STANDARD 14)
+
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
+#find_package(xmlrpcpp REQUIRED)
+#find_package(rostime REQUIRED)
+#find_package(rosconsole REQUIRED)
+#find_package(rclcpp_serialization REQUIRED)
+#find_package(cpp_common REQUIRED)
+find_package(irg_spice REQUIRED)
+
+
 
 ## System dependencies are found with CMake's conventions
 find_package(PkgConfig)
@@ -105,12 +105,15 @@ pkg_check_modules(YAMLCPP REQUIRED yaml-cpp>=0.5)
 ## LIBRARIES: libraries you create in this project that dependent projects also need
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
-catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES irg_gazebo_plugins
-  CATKIN_DEPENDS roscpp std_msgs tf2 tf2_ros irg_spice
-#  DEPENDS system_lib
-)
+#catkin_package(
+##  INCLUDE_DIRS include
+##  LIBRARIES irg_gazebo_plugins
+#  CATKIN_DEPENDS roscpp std_msgs tf2 tf2_ros irg_spice
+##  DEPENDS system_lib
+#)
+
+ament_export_dependencies(${PROJECT_NAME} rclcpp tf2 tf2_ros irg_spice)
+
 
 ###########
 ## Build ##
@@ -125,3 +128,5 @@ catkin_package(
 
 
 add_subdirectory(src)
+
+ament_package()

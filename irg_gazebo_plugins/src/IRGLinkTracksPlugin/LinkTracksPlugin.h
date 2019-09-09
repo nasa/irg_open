@@ -7,10 +7,10 @@
 #define LinkTracksPlugin_h
 
 #include <gazebo/common/Plugin.hh>
-#include <ros/ros.h>
-#include <std_msgs/String.h>
-#include <std_msgs/Bool.h>
-#include <std_msgs/UInt8MultiArray.h>
+#include "rclcpp/rclcpp.hpp"
+#include "std_msgs/msg/string.hpp"
+#include "std_msgs/msg/bool.hpp"
+#include "std_msgs/msg/u_int8_multi_array.hpp"
 #include <OGRE/OgreVector3.h>
 #include <OGRE/OgreTexture.h>
 
@@ -41,10 +41,11 @@ namespace gazebo {
     void LoadImage(const std::string& filename);
     
     //-- ROS callbacks
-    void OnSaveImage(const std_msgs::StringConstPtr& msg);
-    void OnLinkEnable(const std_msgs::UInt8MultiArrayConstPtr& msg);
-    void OnDrawEnable(const std_msgs::BoolConstPtr& msg);
+    void OnSaveImage (const std_msgs::msg::String::SharedPtr          msg);
+    void OnLinkEnable(const std_msgs::msg::UInt8MultiArray::SharedPtr msg);
+    void OnDrawEnable(const std_msgs::msg::Bool::SharedPtr            msg);
 
+    
   private:
     // Connection to the update event
     event::ConnectionPtr mUpdateConnection;
@@ -67,10 +68,10 @@ namespace gazebo {
     double mTrackExp;
     
     // For subscribing to ROS messages
-    std::unique_ptr<ros::NodeHandle> mNodeHandle;
-    ros::Subscriber   mSaveImageSub;
-    ros::Subscriber   mLinkEnableSub;
-    ros::Subscriber   mDrawEnableSub;
+    rclcpp::Node::SharedPtr mNodeHandle;
+    rclcpp::Subscription<std_msgs::msg::String>::ConstSharedPtr mSaveImageSub;
+    rclcpp::Subscription<std_msgs::msg::UInt8MultiArray>::ConstSharedPtr mLinkEnableSub;
+    rclcpp::Subscription<std_msgs::msg::Bool>::ConstSharedPtr mDrawEnableSub;
     
     std::string mSaveImage;
     std::string mLoadImage;

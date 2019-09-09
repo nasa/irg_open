@@ -12,7 +12,7 @@ using namespace irg;
 
 CameraCompositorListener::CameraCompositorListener(sdf::ElementPtr sdf)
 {
-  m_node_handle.reset(new ros::NodeHandle("irg_camera_compositor_listener"));
+  m_node_handle = rclcpp::Node::make_shared("irg_camera_compositor_listener");
 
   // Get UID for topic from the sdf element
   if (sdf->HasElement("topic_uid")) {
@@ -64,16 +64,19 @@ void CameraCompositorListener::initParam(std::string name, double initial_value)
   // Commented out are examples of how you can also use std::bind or a lambda
   // to achieve the same result. I'm using boost::bind simply to be consistent
   // with boost::function.
-  boost::function<void (const std_msgs::Float64::ConstPtr& msg)> func =
-    boost::bind(&CameraCompositorListener::onParamUpdate, this, _1, name);
+  std::function<void (const std_msgs::msg::Float64::SharedPtr msg)> func =
+    std::bind(&CameraCompositorListener::onParamUpdate, this, std::placeholders::_1, name);
     //std::bind(&CameraCompositorListener::onParamUpdate, this, std::placeholders::_1, name);
     //[this, name](const std_msgs::Float64::ConstPtr& msg){ m_param_map[name].m_value = msg->data; };
 
   // Subscribe using our fancy bound function pointer.
-  m_param_map[name].m_subscriber = m_node_handle->subscribe(topic, 1, func);
+  //m_param_map[name].m_subscriber = m_node_handle->subscribe(topic, 1, func);
+  
+  m_param_map[name].m_subscriber = m_node_handle->create_subscription<std_msgs::msg::Float64>(topic, func);
+  
 }
 
-void CameraCompositorListener::onParamUpdate(const std_msgs::Float64::ConstPtr& msg, std::string name)
+void CameraCompositorListener::onParamUpdate(const std_msgs::msg::Float64::SharedPtr msg, std::string name)
 {
   m_param_map[name].m_value = msg->data;
 }
