@@ -90,13 +90,12 @@ void Ephemeris::BodyToBodyTransform(const string& referenceBody,
   SpiceInt dim;
   logical found;		// SpiceInt, logical & integer are SPICE types
   integer ref_body_id;
-  string frameName;
 
   // Convert the time string to ephemeris time
   str2et_c(time.c_str(), &ephemTime);
 
   // Compute target state in reference body frame with a single call to SPKEZR
-  frameName = "IAU_" + referenceBody;
+  string frameName = "IAU_" + referenceBody;
   spkezr_c(targetBody.c_str(), ephemTime, frameName.c_str(), "LT+S",
 	   referenceBody.c_str(),
 	   state, &lightTime);
@@ -106,10 +105,12 @@ void Ephemeris::BodyToBodyTransform(const string& referenceBody,
 
   // Calculate translation from target to surface in body reference
   // frame.
-  vpack_c(-target_in_ref_frame[0], -target_in_ref_frame[1], -target_in_ref_frame[2], translation);
+  vpack_c(-target_in_ref_frame[0], -target_in_ref_frame[1],
+	  -target_in_ref_frame[2], translation);
 
   // Get rotation from reference body to target body
-  pxform_c(referenceBody.c_str(), targetBody.c_str(), ephemTime,
+  string targetFrameName = "IAU_" + targetBody;
+  pxform_c(frameName.c_str(), targetFrameName.c_str(), ephemTime,
 	   rotation);
 
   // The following assumes column vector notation, and row-major
@@ -156,7 +157,6 @@ void Ephemeris::SurfaceToTargetBodyTransform(const string& referenceBody,
   SpiceInt dim;
   logical found;		// SpiceInt, logical & integer are SPICE types
   integer ref_body_id;
-  string frameName;
 
   // Convert the time string to ephemeris time
   str2et_c(time.c_str(), &ephemTime);
@@ -184,7 +184,7 @@ void Ephemeris::SurfaceToTargetBodyTransform(const string& referenceBody,
   // frames are Z-down!
 
   // Compute target state in reference body frame with a single call to SPKEZR
-  frameName = "IAU_" + referenceBody;
+  string frameName = "IAU_" + referenceBody;
   spkezr_c(targetBody.c_str(), ephemTime, frameName.c_str(), "LT+S", referenceBody.c_str(),
 	   state, &lightTime);
 	
@@ -199,7 +199,8 @@ void Ephemeris::SurfaceToTargetBodyTransform(const string& referenceBody,
   mxv_c(ref_to_surf_rotation, translation, translation);
 
   // Get rotation from reference body to target body
-  pxform_c(referenceBody.c_str(), targetBody.c_str(), ephemTime,
+  string targetFrameName = "IAU_" + targetBody;
+  pxform_c(frameName.c_str(), targetFrameName.c_str(), ephemTime,
 	   rotation);
 
   // Concatenate the reference body to target body rotation with the
@@ -250,7 +251,6 @@ void Ephemeris::VectorToTarget(const string& referenceBody,
   SpiceInt dim;
   logical found;		// SpiceInt, logical & integer are SPICE types
   integer ref_body_id;
-  string frameName;
 
   // Convert the time string to ephemeris time
   str2et_c(time.c_str(), &ephemTime);
@@ -266,20 +266,22 @@ void Ephemeris::VectorToTarget(const string& referenceBody,
   // (assumes planetocentric lat/lon)
   latrec_c(1.0, lon * rpd_c(), lat * rpd_c(), vec_from_ref_center);
 
-  // Compute surface point on reference body in rectangular coordinates and with ellipsoid
-  surfpt_c(ref_center, vec_from_ref_center, ref_radii[0], ref_radii[1], ref_radii[2], 
-	   ref_surf_point, (int*) &found);
+  // Compute surface point on reference body in rectangular
+  // coordinates and with ellipsoid
+  surfpt_c(ref_center, vec_from_ref_center, ref_radii[0], ref_radii[1],
+	   ref_radii[2], ref_surf_point, (int*) &found);
 
   // Compute surface normal
-  surfnm_c(ref_radii[0], ref_radii[1], ref_radii[2], ref_surf_point, ref_surf_normal);
+  surfnm_c(ref_radii[0], ref_radii[1], ref_radii[2], ref_surf_point,
+	   ref_surf_normal);
 
   // Compute transform matrix
   twovec_c(ref_surf_normal, 3, z_axis, 1, ref_to_surf_rotation);
 
   // Compute target state in reference frame with a single call to SPKEZR
-  frameName = "IAU_" + referenceBody;
-  spkezr_c(targetBody.c_str(), ephemTime, frameName.c_str(), "LT+S", referenceBody.c_str(),
-	   state, &lightTime);
+  string frameName = "IAU_" + referenceBody;
+  spkezr_c(targetBody.c_str(), ephemTime, frameName.c_str(), "LT+S",
+	   referenceBody.c_str(), state, &lightTime);
 
   if (failed_c())  // If we have an error, return early
   {
