@@ -25,3 +25,7 @@ target_link_libraries(${TARGET_NAME}
   ${rclcpp_LIBRARIES}
 )
 set_target_properties(${TARGET_NAME} PROPERTIES COMPILE_FLAGS "${GAZEBO_CXX_FLAGS}")
+
+install(TARGETS ${TARGET_NAME}
+  LIBRARY DESTINATION lib
+)

@@ -30,3 +30,9 @@ set_target_properties(${TARGET_NAME}SensorPlugin PROPERTIES COMPILE_FLAGS "${GAZ
 target_link_libraries(${TARGET_NAME}VisualPlugin ${GAZEBO_libraries})
 set_target_properties(${TARGET_NAME}VisualPlugin PROPERTIES COMPILE_FLAGS "${GAZEBO_CXX_FLAGS}")
 
+install(TARGETS
+  ${TARGET_NAME}SensorPlugin
+  ${TARGET_NAME}VisualPlugin
+  LIBRARY DESTINATION lib
+)
+

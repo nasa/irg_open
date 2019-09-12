@@ -30,3 +30,7 @@ set_target_properties(${TARGET_NAME} PROPERTIES COMPILE_FLAGS "${GAZEBO_CXX_FLAG
 #add_dependencies(${TARGET_NAME}  ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
 
 rosidl_target_interfaces(${TARGET_NAME} ${PROJECT_NAME} "rosidl_typesupport_cpp")
+
+install(TARGETS ${TARGET_NAME}
+  LIBRARY DESTINATION lib
+)

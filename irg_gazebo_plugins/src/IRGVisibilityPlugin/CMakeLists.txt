@@ -19,3 +19,6 @@ target_link_libraries(${TARGET_NAME}
 )
 set_target_properties(${TARGET_NAME} PROPERTIES COMPILE_FLAGS "${GAZEBO_CXX_FLAGS}")
 
+install(TARGETS ${TARGET_NAME}
+  LIBRARY DESTINATION lib
+)
