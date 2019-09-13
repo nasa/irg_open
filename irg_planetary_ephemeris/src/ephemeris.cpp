@@ -175,18 +175,23 @@ void Ephemeris::SurfaceToTargetBodyTransform(const string& referenceBody,
   srfrec_c(ref_body_id, lon * rpd_c(), lat * rpd_c(), ref_surf_point);
 
   // Compute reference body surface normal
-  surfnm_c(ref_radii[0], ref_radii[1], ref_radii[2], ref_surf_point, ref_surf_normal);
+  surfnm_c(ref_radii[0], ref_radii[1], ref_radii[2], ref_surf_point,
+	   ref_surf_normal);
 
   // Compute surface transform matrix - this defines a surface frame
   // with X-north, Y-west, and Z-up
-  twovec_c(ref_surf_normal, 3, z_axis, 1, ref_to_surf_rotation);
-  // Should follow with a 180 deg rotation about X, since mission site
-  // frames are Z-down!
-
+  SpiceDouble ref_to_surf_rotation_z_up[3][3];
+  twovec_c(ref_surf_normal, 3, z_axis, 1, ref_to_surf_rotation_z_up);
+  // Mission site frames are Z-down, so we rotate 180 degrees about
+  // X-axis here.
+  const SpiceInt X_axis = 1;
+  rotmat_c(ref_to_surf_rotation_z_up, 180.0*rpd_c(), X_axis,
+	   ref_to_surf_rotation);
+    
   // Compute target state in reference body frame with a single call to SPKEZR
   string frameName = "IAU_" + referenceBody;
-  spkezr_c(targetBody.c_str(), ephemTime, frameName.c_str(), "LT+S", referenceBody.c_str(),
-	   state, &lightTime);
+  spkezr_c(targetBody.c_str(), ephemTime, frameName.c_str(), "LT+S",
+	   referenceBody.c_str(), state, &lightTime);
 	
   // Extract 3-component target position from the 6-component state.
   vpack_c(state[0], state[1], state[2], target_in_ref_frame);
@@ -275,9 +280,16 @@ void Ephemeris::VectorToTarget(const string& referenceBody,
   surfnm_c(ref_radii[0], ref_radii[1], ref_radii[2], ref_surf_point,
 	   ref_surf_normal);
 
-  // Compute transform matrix
-  twovec_c(ref_surf_normal, 3, z_axis, 1, ref_to_surf_rotation);
-
+  // Compute transform matrix - this defines a surface frame
+  // with X-north, Y-west, and Z-up
+  SpiceDouble ref_to_surf_rotation_z_up[3][3];
+  twovec_c(ref_surf_normal, 3, z_axis, 1, ref_to_surf_rotation_z_up);
+  // Mission site frames are Z-down, so we rotate 180 degrees about
+  // X-axis here.
+  const SpiceInt X_axis = 1;
+  rotmat_c(ref_to_surf_rotation_z_up, 180.0*rpd_c(), X_axis,
+	   ref_to_surf_rotation);
+  
   // Compute target state in reference frame with a single call to SPKEZR
   string frameName = "IAU_" + referenceBody;
   spkezr_c(targetBody.c_str(), ephemTime, frameName.c_str(), "LT+S",
