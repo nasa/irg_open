@@ -172,7 +172,7 @@ void Ephemeris::SurfaceToTargetBodyTransform(const string& referenceBody,
 
   // Compute cartesian coordinates of the specified lat/lon on the
   // reference body surface (assumes planetocentric lat/lon)
-  srfrec_c(ref_body_id, lon, lat, ref_surf_point);
+  srfrec_c(ref_body_id, lon * rpd_c(), lat * rpd_c(), ref_surf_point);
 
   // Compute reference body surface normal
   surfnm_c(ref_radii[0], ref_radii[1], ref_radii[2], ref_surf_point, ref_surf_normal);
@@ -323,8 +323,6 @@ void Ephemeris::PlanetoGraphicToCentric(const string& planetaryBody,
 {
   SpiceDouble radii[3];
   SpiceInt max_radii_dim = sizeof(radii)/sizeof(radii[0]);
-  integer body_id(0);	// integer, logical & SpiceInt are SPICE types
-  logical found(0);
   SpiceInt dim(0);
 
   // Get radius of body -- Deprecated
@@ -341,13 +339,22 @@ void Ephemeris::PlanetoGraphicToCentric(const string& planetaryBody,
   out_lat = (atan((1.0 - e_sqr) * tan(in_lat * rpd_c()))) / rpd_c();
 
   // Convert planetographic longitude if necessary
-  // Earth = 399, Venus = 299
-  if (body_id == VENUS_BODY_ID || body_id == EARTH_BODY_ID) 
+  SpiceInt body_id(0);
+  SpiceBoolean found(0);
+  bodn2c_c(planetaryBody.c_str(), &body_id, &found);
+  // Unknown body errors should be signalled above, so we don't warn
+  // here.
+  if (found)
   {
-    out_lon = in_lon;
-  } 
-  else
-  {
-    out_lon = -in_lon;
+    // plnsns() apparently only exists as a Fortran function. There is
+    // no CSPICE version yet.
+    SpiceInt lon_conversion = plnsns_(&body_id);
+    if (lon_conversion != 0)
+      out_lon = lon_conversion * in_lon;
+    else
+      cerr << "WARNING [PlanetoGraphicToCentric()]: "
+	   << "longitude sense not available for"
+	   << planetaryBody << ". Longitude conversion skipped."
+	   << endl;
   }
 }

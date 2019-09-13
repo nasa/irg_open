@@ -17,11 +17,18 @@ namespace ow
   typedef float float32_ow;
 
   const int32_t SUN_BODY_ID = 10;
+  const int32_t MERCURY_BODY_ID = 199;
+  const int32_t VENUS_BODY_ID = 299;  
   const int32_t EARTH_BODY_ID = 399;
+  const int32_t MARS_BODY_ID = 499;
+  const int32_t JUPITER_BODY_ID = 599;
   const int32_t EUROPA_BODY_ID = 502;
+  const int32_t SATURN_BODY_ID = 699;
   const int32_t ENCELADUS_BODY_ID = 602;
   const int32_t TITAN_BODY_ID = 606;
-  const int32_t VENUS_BODY_ID = 299;
+  const int32_t URANUS_BODY_ID = 799;
+  const int32_t NEPTUNE_BODY_ID = 899;
+  const int32_t PLUTO_BODY_ID = 999;
 
   class Ephemeris
   {
