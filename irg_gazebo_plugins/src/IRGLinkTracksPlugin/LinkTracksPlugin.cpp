@@ -31,19 +31,6 @@ LinkTracksPlugin::LinkTracksPlugin() :
   mTrackExp(2.0)
 {
   mTexture.setNull();
-
-  // Initialize ros, if it has not already been initialized.
-  if (!rclcpp::is_initialized)
-  {
-    int argc = 0;
-    char** argv = NULL;
-    //ros::init(argc, argv, "gazebo_client",
-    //  ros::init_options::NoSigintHandler);
-    rclcpp::init(argc, argv);
-  }
-
-  // Create our ROS node. This acts in a similar manner to the Gazebo node
-  mNodeHandle = rclcpp::Node::make_shared("gazebo_client");
 }
 
 /**
@@ -58,6 +45,8 @@ LinkTracksPlugin::~LinkTracksPlugin()
  */
 void LinkTracksPlugin::Load(rendering::VisualPtr _sensor, sdf::ElementPtr _sdf)
 {
+  mRosNode = gazebo_ros::Node::Get(_sdf);
+
   //-- specify link names
   for(int i = 0; i < 16; i++) {
     char buf[128];
@@ -87,7 +76,7 @@ void LinkTracksPlugin::Load(rendering::VisualPtr _sensor, sdf::ElementPtr _sdf)
   }
   // if parameter exists on ROS param server, use that instead
   const char* param_name = "/gazebo/plugins/link_tracks/load_image";
-  mNodeHandle->get_parameter(param_name, mLoadImage);
+  mRosNode->get_parameter(param_name, mLoadImage);
 
   
   //-- track width
@@ -116,16 +105,16 @@ void LinkTracksPlugin::Load(rendering::VisualPtr _sensor, sdf::ElementPtr _sdf)
   }
   
   //== subscribe to ROS messages ==============
-  mSaveImageSub = mNodeHandle->create_subscription<std_msgs::msg::String>(
-          "/gazebo/plugins/link_tracks/save_image",
+  mSaveImageSub = mRosNode->create_subscription<std_msgs::msg::String>(
+          "/gazebo/plugins/link_tracks/save_image", rclcpp::QoS(1),
           std::bind(&LinkTracksPlugin::OnSaveImage, this, std::placeholders::_1));
   
-  mLinkEnableSub = mNodeHandle->create_subscription<std_msgs::msg::UInt8MultiArray>(
-          "/gazebo/plugins/link_tracks/link_enable",
+  mLinkEnableSub = mRosNode->create_subscription<std_msgs::msg::UInt8MultiArray>(
+          "/gazebo/plugins/link_tracks/link_enable", rclcpp::QoS(1),
           std::bind(&LinkTracksPlugin::OnLinkEnable, this, std::placeholders::_1));
 
-  mDrawEnableSub = mNodeHandle->create_subscription<std_msgs::msg::Bool>(
-          "/gazebo/plugins/link_tracks/draw_enable",
+  mDrawEnableSub = mRosNode->create_subscription<std_msgs::msg::Bool>(
+          "/gazebo/plugins/link_tracks/draw_enable", rclcpp::QoS(1),
           std::bind(&LinkTracksPlugin::OnDrawEnable, this, std::placeholders::_1));
   
   

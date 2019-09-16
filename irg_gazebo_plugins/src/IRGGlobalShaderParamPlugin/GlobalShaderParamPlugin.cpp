@@ -34,8 +34,6 @@ GlobalShaderParamPlugin::GlobalShaderParamPlugin() :
   m_hasUpdates(false),
   m_cacheCleared(true)
 {
-  m_nodeHandle = rclcpp::Node::make_shared("gazebo_global_shader_param_plugin");
-  
   //if( ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Debug) ) {
   // ros::console::notifyLoggerLevelsChanged();
   //}
@@ -62,6 +60,8 @@ inline int8_t shaderTypeFromString(const std::string& str) {
  */
 void GlobalShaderParamPlugin::Load(rendering::VisualPtr _sensor, sdf::ElementPtr _sdf)
 {
+  m_rosNode = gazebo_ros::Node::Get(_sdf);
+
   // get param names to cache
   sdf::ElementPtr paramElem = _sdf->GetElement("param");
   while(paramElem) {
@@ -81,8 +81,8 @@ void GlobalShaderParamPlugin::Load(rendering::VisualPtr _sensor, sdf::ElementPtr
     
   std::string topic("/gazebo/global_shader_param");
   m_subscriber
-   = m_nodeHandle->create_subscription<irg_gazebo_plugins::msg::ShaderParamUpdate>(
-          topic,
+   = m_rosNode->create_subscription<irg_gazebo_plugins::msg::ShaderParamUpdate>(
+          topic, rclcpp::QoS(1),
           std::bind(&GlobalShaderParamPlugin::onShaderParamUpdate, this, std::placeholders::_1));
   
   //-- connection callbacks ---------------
@@ -197,7 +197,7 @@ void GlobalShaderParamPlugin::cacheParams(int8_t shaderType , const std::string&
                       const GpuConstantDefinition* paramDef = gpuParams->_findNamedConstantDefinition(paramName);
                       if(paramDef) {
                         paramsList.push_back(gpuParams);
-                        RCLCPP_INFO(m_nodeHandle->get_logger(),
+                        RCLCPP_INFO(m_rosNode->get_logger(),
                                     "-- %s found in %d program : %s (%p)",
                                     paramName.c_str(), shaderType, matName.c_str(), gpuParams.get());
                       }
@@ -212,7 +212,7 @@ void GlobalShaderParamPlugin::cacheParams(int8_t shaderType , const std::string&
                       const GpuConstantDefinition* paramDef = gpuParams->_findNamedConstantDefinition(paramName);
                       if(paramDef) {
                         paramsList.push_back(gpuParams);
-                        RCLCPP_INFO(m_nodeHandle->get_logger(),
+                        RCLCPP_INFO(m_rosNode->get_logger(),
                                     "-- %s found in %d program : %s (%p)",
                                     paramName.c_str(), shaderType, matName.c_str(), gpuParams.get());
                       }
@@ -226,7 +226,7 @@ void GlobalShaderParamPlugin::cacheParams(int8_t shaderType , const std::string&
       }
     }
   }
-  RCLCPP_INFO(m_nodeHandle->get_logger(), "GlobalShaderParamPlugin::cacheParams(%s, %ld)",
+  RCLCPP_INFO(m_rosNode->get_logger(), "GlobalShaderParamPlugin::cacheParams(%s, %ld)",
               paramName.c_str(), paramsList.size());
 }
 

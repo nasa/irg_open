@@ -7,7 +7,7 @@
 #define GlobalShaderParamPlugin_h
 
 #include <gazebo/common/Plugin.hh>
-#include "rclcpp/rclcpp.hpp"
+#include <gazebo_ros/node.hpp>
 
 #include "std_msgs/msg/string.hpp"
 #include "irg_gazebo_plugins/msg/shader_param_update.hpp"
@@ -56,7 +56,7 @@ private:
   gazebo::event::ConnectionPtr m_entityDeletedConnection;
   gazebo::event::ConnectionPtr m_worldCreatedConnection;
 
-  rclcpp::Node::SharedPtr m_nodeHandle;
+  gazebo_ros::Node::SharedPtr m_rosNode;
   rclcpp::Subscription<irg_gazebo_plugins::msg::ShaderParamUpdate>::ConstSharedPtr m_subscriber;
 
   std::map<std::string,GpuProgramParamsList> m_paramsListMap[irg_gazebo_plugins::msg::ShaderParamUpdate::NUM_SHADER_TYPES];

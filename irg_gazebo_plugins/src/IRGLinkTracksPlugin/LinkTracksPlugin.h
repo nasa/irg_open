@@ -7,6 +7,7 @@
 #define LinkTracksPlugin_h
 
 #include <gazebo/common/Plugin.hh>
+#include <gazebo_ros/node.hpp>
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
 #include "std_msgs/msg/bool.hpp"
@@ -68,7 +69,7 @@ namespace gazebo {
     double mTrackExp;
     
     // For subscribing to ROS messages
-    rclcpp::Node::SharedPtr mNodeHandle;
+    gazebo_ros::Node::SharedPtr mRosNode;
     rclcpp::Subscription<std_msgs::msg::String>::ConstSharedPtr mSaveImageSub;
     rclcpp::Subscription<std_msgs::msg::UInt8MultiArray>::ConstSharedPtr mLinkEnableSub;
     rclcpp::Subscription<std_msgs::msg::Bool>::ConstSharedPtr mDrawEnableSub;

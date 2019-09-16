@@ -1,5 +1,7 @@
 set(TARGET_NAME IRGGlobalShaderParamPlugin)
 
+find_package(gazebo_ros REQUIRED)
+
 set (HEADERS
   GlobalShaderParamPlugin.h
 )
@@ -24,6 +26,8 @@ target_link_libraries(${TARGET_NAME}
   ${GAZEBO_libraries}
   ${rclcpp_LIBRARIES}
 )
+
+ament_target_dependencies(${TARGET_NAME} "gazebo_ros")
 set_target_properties(${TARGET_NAME} PROPERTIES COMPILE_FLAGS "${GAZEBO_CXX_FLAGS}")
 
 ## because we're using custom ros message
