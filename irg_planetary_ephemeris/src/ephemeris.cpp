@@ -16,7 +16,8 @@ Ephemeris::Ephemeris()
   m_leapSecondKernelPath = "./latest_leapseconds.tls";
   m_constantsKernelPath =  "./pck00010.tpc";
   m_ephemerisPaths.push_back("./de430.bsp");
-
+  m_z_down_surface_frame = true;
+  
   // Set the SPICELIB error response action to "RETURN":
   erract_c("SET", 0, (char *) "RETURN");
 
@@ -25,12 +26,14 @@ Ephemeris::Ephemeris()
 
 Ephemeris::Ephemeris(const string& leapSecondKernelPath,
 		     const string& constantsKernelPath,
-		     const string& ephemerisPath)
+		     const string& ephemerisPath,
+		     bool z_down_surface_frame)
 { 
   m_ephemerisHandle = 0;
   m_leapSecondKernelPath = leapSecondKernelPath;
   m_constantsKernelPath = constantsKernelPath;
   m_ephemerisPaths.push_back(ephemerisPath);
+  m_z_down_surface_frame = z_down_surface_frame;
 
   // Set the SPICELIB error response action to "RETURN":
   erract_c("SET", 0, (char *) "RETURN");
@@ -40,13 +43,15 @@ Ephemeris::Ephemeris(const string& leapSecondKernelPath,
 
 Ephemeris::Ephemeris(const string& leapSecondKernelPath,
 		     const string& constantsKernelPath,
-		     const vector<string>& ephemerisPaths)
+		     const vector<string>& ephemerisPaths,
+		     bool z_down_surface_frame)
 { 
   m_ephemerisHandle = 0;
   m_leapSecondKernelPath = leapSecondKernelPath;
   m_constantsKernelPath = constantsKernelPath;
   for (int i = 0; i < ephemerisPaths.size(); ++i)
     m_ephemerisPaths.push_back(ephemerisPaths[i]);
+  m_z_down_surface_frame = z_down_surface_frame;
 
   // Set the SPICELIB error response action to "RETURN":
   erract_c("SET", 0, (char *) "RETURN");
@@ -138,6 +143,7 @@ void Ephemeris::BodyToBodyTransform(const string& referenceBody,
 void Ephemeris::SurfaceToTargetBodyTransform(const string& referenceBody,
 					     const float64_ow lat,
 					     const float64_ow lon,
+					     const float64_ow elev,
 					     const string& targetBody,
 					     const string& time,
 					     float64_ow transform[16])
@@ -178,15 +184,22 @@ void Ephemeris::SurfaceToTargetBodyTransform(const string& referenceBody,
   surfnm_c(ref_radii[0], ref_radii[1], ref_radii[2], ref_surf_point,
 	   ref_surf_normal);
 
-  // Compute surface transform matrix - this defines a surface frame
-  // with X-north, Y-west, and Z-up
-  SpiceDouble ref_to_surf_rotation_z_up[3][3];
-  twovec_c(ref_surf_normal, 3, z_axis, 1, ref_to_surf_rotation_z_up);
-  // Mission site frames are Z-down, so we rotate 180 degrees about
-  // X-axis here.
-  const SpiceInt X_axis = 1;
-  rotmat_c(ref_to_surf_rotation_z_up, 180.0*rpd_c(), X_axis,
-	   ref_to_surf_rotation);
+  // Compute surface transform matrix - as called, twovec_c defines a
+  // surface frame with X-north, Y-west, and Z-up
+  if (m_z_down_surface_frame)
+  {
+    // If Z down surface frame (typical for missions), we rotate 180
+    // degrees about X-axis here.
+    SpiceDouble ref_to_surf_rotation_z_up[3][3];
+    twovec_c(ref_surf_normal, 3, z_axis, 1, ref_to_surf_rotation_z_up);
+    const SpiceInt X_axis = 1;
+    rotmat_c(ref_to_surf_rotation_z_up, 180.0*rpd_c(), X_axis,
+	     ref_to_surf_rotation);
+  }
+  else
+  {
+    twovec_c(ref_surf_normal, 3, z_axis, 1, ref_to_surf_rotation);
+  }
     
   // Compute target state in reference body frame with a single call to SPKEZR
   string frameName = "IAU_" + referenceBody;
@@ -236,6 +249,7 @@ void Ephemeris::SurfaceToTargetBodyTransform(const string& referenceBody,
 void Ephemeris::VectorToTarget(const string& referenceBody,
 			       const float64_ow lat,
 			       const float64_ow lon,
+			       const float64_ow elev,
 			       const string& targetBody,
 			       const string& time,
 			       float64_ow out_vec[3])
@@ -280,15 +294,22 @@ void Ephemeris::VectorToTarget(const string& referenceBody,
   surfnm_c(ref_radii[0], ref_radii[1], ref_radii[2], ref_surf_point,
 	   ref_surf_normal);
 
-  // Compute transform matrix - this defines a surface frame
-  // with X-north, Y-west, and Z-up
-  SpiceDouble ref_to_surf_rotation_z_up[3][3];
-  twovec_c(ref_surf_normal, 3, z_axis, 1, ref_to_surf_rotation_z_up);
-  // Mission site frames are Z-down, so we rotate 180 degrees about
-  // X-axis here.
-  const SpiceInt X_axis = 1;
-  rotmat_c(ref_to_surf_rotation_z_up, 180.0*rpd_c(), X_axis,
-	   ref_to_surf_rotation);
+  // Compute surface transform matrix - as called, twovec_c defines a
+  // surface frame with X-north, Y-west, and Z-up
+  if (m_z_down_surface_frame)
+  {
+    // If Z down surface frame (typical for missions), we rotate 180
+    // degrees about X-axis here.
+    SpiceDouble ref_to_surf_rotation_z_up[3][3];
+    twovec_c(ref_surf_normal, 3, z_axis, 1, ref_to_surf_rotation_z_up);
+    const SpiceInt X_axis = 1;
+    rotmat_c(ref_to_surf_rotation_z_up, 180.0*rpd_c(), X_axis,
+	     ref_to_surf_rotation);
+  }
+  else
+  {
+    twovec_c(ref_surf_normal, 3, z_axis, 1, ref_to_surf_rotation);
+  }
   
   // Compute target state in reference frame with a single call to SPKEZR
   string frameName = "IAU_" + referenceBody;

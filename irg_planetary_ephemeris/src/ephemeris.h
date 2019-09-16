@@ -37,11 +37,13 @@ namespace ow
     
     Ephemeris(const std::string& leapSecondKernelPath,
 	      const std::string& constantsKernelPath,
-	      const std::string& positionKernelPath);
+	      const std::string& positionKernelPath,
+	      bool z_down_surface_frame = true);
 
     Ephemeris(const std::string& leapSecondKernelPath,
 	      const std::string& constantsKernelPath,
-	      const std::vector<std::string>& positionKernelPaths);
+	      const std::vector<std::string>& positionKernelPaths,
+	      bool z_down_surface_frame = true);
 
     ~Ephemeris();
     
@@ -59,6 +61,7 @@ namespace ow
     void SurfaceToTargetBodyTransform(const std::string& referenceBody,
 				      const float64_ow lat,
 				      const float64_ow lon,
+				      const float64_ow elev,
 				      const std::string& targetBody,
 				      const std::string& time,
 				      float64_ow transform[16]);
@@ -66,6 +69,7 @@ namespace ow
     void VectorToTarget(const std::string& referenceBody,
 			const float64_ow lat,
 			const float64_ow lon,
+			const float64_ow elev,
 			const std::string& targetBody,
 			const std::string& time,
 			float64_ow out_vec[3]);
@@ -75,6 +79,7 @@ namespace ow
 
     void UnLoad();
     
+    bool m_z_down_surface_frame = true;
     int32_t m_ephemerisHandle = 0;
     std::string m_leapSecondKernelPath;
     std::string m_constantsKernelPath; // planetary shape/size/orientation constants
