@@ -125,6 +125,7 @@ void
 broadcast_transforms(tf2_ros::TransformBroadcaster& broadcaster,
 		     const string& reference_body,
 		     const float64_ow lat, const float64_ow lon,
+		     const float64_ow elev,
 		     const vector<string> &target_bodies,
 		     const builtin_interfaces::msg::Time &ros_time,
 		     Ephemeris &ephemeris)
@@ -135,7 +136,7 @@ broadcast_transforms(tf2_ros::TransformBroadcaster& broadcaster,
   {
     float64_ow spice_transform[16];
 
-    ephemeris.SurfaceToTargetBodyTransform(reference_body, lat, lon, 
+    ephemeris.SurfaceToTargetBodyTransform(reference_body, lat, lon, elev,
 					   target_bodies[i], time_string,
 					   spice_transform);
 
@@ -210,6 +211,7 @@ set_default_run_parameters(string &reference_body,
 			   vector<string> &target_bodies,
 			   float64_ow &mission_lat, float64_ow &mission_lon,
 			   float64_ow &mission_elev,
+			   bool &z_down_surface_frame,
 			   string &leapSecondKernelPath,
 			   string &constantsKernelPath,
 			   vector<string> &ephemerisPaths)
@@ -220,6 +222,7 @@ set_default_run_parameters(string &reference_body,
   mission_lat = 0.0;
   mission_lon = 0.0;
   mission_elev = 0.0;
+  z_down_surface_frame = true;
   leapSecondKernelPath = "./latest_leapseconds.tls";
   constantsKernelPath =  "./pck00010.tpc";
   ephemerisPaths = { "./de430.bsp" };
@@ -229,7 +232,7 @@ bool
 read_run_parameters(const string &run_parameters_filename, string &reference_body,
 		    vector<string> &target_bodies,
 		    float64_ow &mission_lat, float64_ow &mission_lon,
-		    float64_ow &mission_elev,
+		    float64_ow &mission_elev, bool &z_down_surface_frame,
 		    string &leapSecondKernelPath, string &constantsKernelPath, 
 		    vector<string> &ephemerisPaths)
 {
@@ -261,6 +264,13 @@ read_run_parameters(const string &run_parameters_filename, string &reference_bod
   else
     cerr << "WARNING [read_run_parameters()]: "
 	 << "no mission elevation specified, assuming elevation = 0" << endl;
+  z_down_surface_frame = true;
+  if (parameters["z_down_surface_frame"])
+    mission_elev = parameters["z_down_surface_frame"].as<bool>();
+  else
+    cerr << "WARNING [read_run_parameters()]: "
+	 << "surface frame Z axis direction not specified, assuming Z down."
+	 << endl;
   if (parameters["leap_second_kernel"])
     leapSecondKernelPath = parameters["leap_second_kernel"].as<string>();
   else
@@ -285,7 +295,7 @@ bool
 read_ros_run_parameters(rclcpp::Node::SharedPtr nodeHandle, string &reference_body,
 			vector<string> &target_bodies,
 			float64_ow &mission_lat, float64_ow &mission_lon,
-			float64_ow &mission_elev,
+			float64_ow &mission_elev, bool &z_down_surface_frame,
 			string &leapSecondKernelPath, string &constantsKernelPath, 
 			vector<string> &ephemerisPaths)
 {
@@ -306,6 +316,12 @@ read_ros_run_parameters(rclcpp::Node::SharedPtr nodeHandle, string &reference_bo
     RCLCPP_INFO(nodeHandle->get_logger(),
                 "WARNING [read_ros_run_parameters()]: "
                 "no mission elevation specified, assuming elevation = 0");
+  z_down_surface_frame = true;
+  if (!nodeHandle->get_parameter("z_down_surface_frame", z_down_surface_frame))
+    RCLCPP_INFO(nodeHandle->get_logger(),
+                "WARNING [read_ros_run_parameters()]: "
+		          "surface frame Z axis direction not specified, "
+		          "assuming Z down.");
 
   if (!nodeHandle->get_parameter("leap_second_kernel", leapSecondKernelPath))
     return false;
@@ -347,11 +363,13 @@ main(int argc, char *argv[])
   string reference_body;
   vector<string> target_bodies;
   float64_ow mission_lat, mission_lon, mission_elev;
+  bool z_down_surface_frame;
   string leapSecondKernelPath, constantsKernelPath;
   vector<string> ephemerisPaths;
 
   set_default_run_parameters(reference_body, target_bodies,
 			     mission_lat, mission_lon, mission_elev,
+			     z_down_surface_frame,
 			     leapSecondKernelPath, constantsKernelPath, 
 			     ephemerisPaths);
   if (have_non_ros_paramater_file_option(argc, argv, run_parameters_filename))
@@ -359,6 +377,7 @@ main(int argc, char *argv[])
     if (!read_run_parameters(run_parameters_filename,
 			     reference_body, target_bodies,
 			     mission_lat, mission_lon, mission_elev,
+			     z_down_surface_frame,
 			     leapSecondKernelPath, constantsKernelPath, 
 			     ephemerisPaths))
     {
@@ -371,6 +390,7 @@ main(int argc, char *argv[])
   {
     if (!read_ros_run_parameters(nodeHandle, reference_body, target_bodies,
 				 mission_lat, mission_lon, mission_elev,
+				 z_down_surface_frame,
 				 leapSecondKernelPath, constantsKernelPath, 
 				 ephemerisPaths))
     {
@@ -405,6 +425,7 @@ main(int argc, char *argv[])
     
     builtin_interfaces::msg::Time builtin_time = ros_time_to_builtin_time(current_time);
     broadcast_transforms(broadcaster, reference_body, mission_lat, mission_lon,
+                         mission_elev,
                          target_bodies, builtin_time, ephemeris);
     
     publishRate.sleep();
