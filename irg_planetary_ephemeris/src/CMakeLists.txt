@@ -1,15 +1,21 @@
+set(TARGET_NAME publisher)
+
 include_directories(
   ${rclcpp_INCLUDE_DIRS}
   ${irg_spice_INCLUDE_DIRS}
   ${YAMLCPP_INCLUDE_DIRS}
 )
 
-add_executable(publisher ephemeris_publisher_node.cpp ephemeris.cpp handle-options.cpp)
+add_executable(${TARGET_NAME} ephemeris_publisher_node.cpp ephemeris.cpp handle-options.cpp)
 
-target_link_libraries(publisher
+target_link_libraries(${TARGET_NAME}
   ${rclcpp_LIBRARIES}
   ${irg_spice_LIBRARIES}
   ${YAMLCPP_LIBRARIES}
 )
 
-ament_target_dependencies(publisher rclcpp tf2 tf2_ros irg_spice)
+ament_target_dependencies(${TARGET_NAME} rclcpp tf2 tf2_ros irg_spice)
+
+install(TARGETS ${TARGET_NAME}
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
