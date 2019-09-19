@@ -130,6 +130,13 @@ void LinkTracksPlugin::Load(rendering::VisualPtr _sensor, sdf::ElementPtr _sdf)
     boost::bind(&LinkTracksPlugin::OnUpdate, this));
 }
 
+static uint32_t MAX_ERRORS        = 50;
+static uint32_t sceneErrors       = 0;
+static uint32_t heightmapErrors   = 0;
+static uint32_t materialErrors    = 0;
+static uint32_t normalsTusErrors  = 0;
+static uint32_t textureNameErrors = 0;
+
 /**
  * Create texture to draw into 
  * @returns true if texture already exists or has successfully been created
@@ -143,13 +150,17 @@ bool LinkTracksPlugin::InitTexture()
 
   rendering::ScenePtr scene = rendering::get_scene();
   if (!scene) {
-    gzerr << "LinkTracksPlugin::InitTexture - scene pointer is NULL" << endl;
+    if(sceneErrors++ < MAX_ERRORS) {
+      gzerr << "LinkTracksPlugin::InitTexture - scene pointer is NULL" << endl;
+    }
     return false;
   }
 
   rendering::Heightmap* heightmap = scene->GetHeightmap();
   if (!heightmap) {
-    gzerr << "LinkTracksPlugin::InitTexture - heightmap pointer is NULL" << endl;
+    if(heightmapErrors++ < MAX_ERRORS) {
+      gzerr << "LinkTracksPlugin::InitTexture - heightmap pointer is NULL" << endl;
+    }
     return false;
   }
 
@@ -157,13 +168,17 @@ bool LinkTracksPlugin::InitTexture()
   // assign the new link tracks texture.
   MaterialPtr parentMat = MaterialManager::getSingleton().getByName(heightmap->MaterialName());
   if (parentMat.isNull()) {
-    gzerr << "LinkTracksPlugin::InitTexture - material pointer is NULL" << endl;
+    if(materialErrors++ < MAX_ERRORS) {
+      gzerr << "LinkTracksPlugin::InitTexture - material pointer is NULL" << endl;
+    }
     return false;
   }
   // Get dimensions of terrain.
   TextureUnitState* normalsTus = parentMat->getTechnique(0)->getPass(0)->getTextureUnitState("normals");
   if (!normalsTus) {
-    gzerr << "LinkTracksPlugin::InitTexture - normals TextureUnitState is NULL" << endl;
+    if(normalsTusErrors++ < MAX_ERRORS) {
+      gzerr << "LinkTracksPlugin::InitTexture - normals TextureUnitState is NULL" << endl;
+    }
     return false;
   }
   pair< size_t, size_t > size = normalsTus->getTextureDimensions();
@@ -211,8 +226,10 @@ bool LinkTracksPlugin::InitTexture()
       tus->setTexture(mTexture);
     }
     else {
-      gzerr << "LinkTracksPlugin::InitTexture -ERROR- could not get texture \"" << 
-        mTextureName << "\" from terrain shader." << endl;
+      if(textureNameErrors++ < MAX_ERRORS) {
+        gzerr << "LinkTracksPlugin::InitTexture -ERROR- could not get texture \"" << 
+          mTextureName << "\" from terrain shader." << endl;
+      }
       return false; 
     }
   }
@@ -250,9 +267,7 @@ void LinkTracksPlugin::OnUpdate()
   }
 }
 
-//limit number of warnings printed to console if we don't have a compatible robot
-static const int WARN_MAX_ProcessLink = 40;
-static       int warn_cnt_ProcessLink = 0;
+static uint32_t visualErrors = 0;
 
 /**
  * Get current link position and draw into texture
@@ -260,8 +275,10 @@ static       int warn_cnt_ProcessLink = 0;
 void LinkTracksPlugin::ProcessLink(const rendering::VisualPtr& visual, const int linkIndex)
 {
   if(!visual) {
-    if(warn_cnt_ProcessLink++ < WARN_MAX_ProcessLink)
-      gzerr << "LinkTracksPlugin::ProcessLink - visual pointer for link " << linkIndex << " is NULL" << endl;
+    if(visualErrors++ < MAX_ERRORS) {
+      gzerr << "LinkTracksPlugin::ProcessLink - visual pointer for link " 
+            << linkIndex << " (" << mLinkName[linkIndex] << ") is NULL" << endl;
+    }
     return;
   }
 
