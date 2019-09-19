@@ -11,7 +11,7 @@ find_package(ament_cmake REQUIRED)
 ###########
 
 # TODO: Should be a real variable!
-set(BUILD_FOLDER "${CMAKE_CURRENT_SOURCE_DIR}/../../build/irg_spice") 
+set(BUILD_FOLDER "${CMAKE_CURRENT_SOURCE_DIR}/../../../build/irg_spice") 
 
 
 # Warning: The MD5 will break whenever they update the tarball!
