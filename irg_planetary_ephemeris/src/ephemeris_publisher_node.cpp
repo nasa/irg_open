@@ -380,7 +380,7 @@ main(int argc, char *argv[])
     }
   }
   
-  Ephemeris ephemeris(leapSecondKernelPath, constantsKernelPath, ephemerisPaths);
+  Ephemeris ephemeris(leapSecondKernelPath, constantsKernelPath, ephemerisPaths, z_down_surface_frame);
   
   // Broadcasting loop
   bool first_error = true;
