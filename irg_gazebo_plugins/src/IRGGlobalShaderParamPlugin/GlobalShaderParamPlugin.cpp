@@ -108,7 +108,6 @@ void GlobalShaderParamPlugin::onShaderParamUpdate(const irg_gazebo_plugins::Shad
   const int8_t shaderType = msg->shaderType;
   if(paramName.length() == 0) {
     clearCache();
-    m_hasUpdates = true;
   }
   else if (shaderType >= 0 && shaderType < ShaderParamUpdate::NUM_SHADER_TYPES){
     // if we've never seen this paramName before, clear the cache
@@ -117,8 +116,11 @@ void GlobalShaderParamPlugin::onShaderParamUpdate(const irg_gazebo_plugins::Shad
     }
     m_paramsListMap[shaderType][paramName]; // ensure key exists
     m_paramUpdateMap[shaderType][paramName] = msg->paramValue;
-    m_hasUpdates = true;
   }
+  else {
+    gzerr << "GlobalShaderParamPlugin::onShaderParamUpdate - unknown shaderType: " << shaderType << std::endl;
+  }
+  m_hasUpdates = true;
 }
 
 void GlobalShaderParamPlugin::onAddEntity()
