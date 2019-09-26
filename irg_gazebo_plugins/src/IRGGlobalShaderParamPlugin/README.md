@@ -34,5 +34,11 @@ To use rostopic to publish a uniform value change:
 ```
 rostopic pub --once /gazebo/global_shader_param irg_gazebo_plugins/ShaderParamUpdate '{ shaderType: 1, paramName: "exposureMultiplier", paramValue: "2.0" }'
 ```
-Note the `paramValue` string should be in Ogre's material script format (i.e. a vec 3 would be "0.5 0.9 1.0")
+  - `shaderType` is one of:
+```
+  SHADER_TYPE_VERTEX   = 0
+  SHADER_TYPE_FRAGMENT = 1
+```
+  - `paramName` is name of uniform in shader
+  - `paramValue` string should be in Ogre's material script format (i.e. a vec 3 would be "0.5 0.9 1.0")
 
