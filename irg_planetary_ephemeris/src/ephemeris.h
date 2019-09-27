@@ -3,10 +3,12 @@
 
 #include <unistd.h>
 #include <stdint.h>
+#include <math.h>
 
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <map>
 #include <string>
 #include <vector>
 #include <fstream>
@@ -74,6 +76,10 @@ namespace ow
 			const std::string& time,
 			float64_ow out_vec[3]);
 
+    // Return fraction of referenceBody visible from behind occulterBody.
+    // Result is in the range {0.0, 1.0}
+    double FractionVisible(const std::string& referenceBody,
+                           const std::string& occulterBody);
   private:
     void Load();
 
@@ -84,6 +90,15 @@ namespace ow
     std::string m_leapSecondKernelPath;
     std::string m_constantsKernelPath; // planetary shape/size/orientation constants
     std::vector<std::string> m_ephemerisPaths; // ephemerides with planet and spacecraft positions and velocities
+
+    // Storage for vectors to target bodies
+    struct Vec3{
+      double xyz[3];
+      double length() { return sqrt(xyz[0] * xyz[0] + xyz[1] * xyz[1] + xyz[2] * xyz[2]); }
+      double normalize() { const double l = length(); xyz[0] /= l; xyz[1] /= l; xyz[2] /= l; return l; }
+      double& operator[] (int x) { return xyz[x]; }
+    };
+    std::map<std::string, Vec3> m_bodyVecMap;
   };
 }
 

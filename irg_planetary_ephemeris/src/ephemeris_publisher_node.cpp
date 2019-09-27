@@ -116,6 +116,8 @@ broadcast_transforms(tf2_ros::TransformBroadcaster broadcaster,
 {
   string time_string = ros_time_to_string(ros_time);
 
+  int sun_index = -1;
+
   for (int i = 0; i < target_bodies.size(); ++i)
   {
     float64_ow spice_transform[16];
@@ -130,6 +132,37 @@ broadcast_transforms(tf2_ros::TransformBroadcaster broadcaster,
 
     // Publish the time stamped transforms for this target body
     broadcaster.sendTransform(time_stamped_transform_msg);
+
+    // Is this the sun?
+    std::string lowercase_name = target_bodies[i];
+    std::transform(lowercase_name.begin(), lowercase_name.end(), lowercase_name.begin(),
+        [](unsigned char c){ return std::tolower(c); });
+    if (lowercase_name == "sun")
+    {
+      sun_index = i;
+    }
+  }
+
+  // Compute amount of sun occultation by another body.
+  // This algorithm finds the smallest of simple body-to-body occultation events.
+  // It does not handle the extremely unlikely case of occultation my multiple
+  // bodies simultaneously.
+  double fraction_visible = 1.0;
+  if (sun_index >= 0 && target_bodies.size() > 1)
+  {
+    for (int i = 0; i < target_bodies.size(); ++i)
+    {
+      if (i == sun_index)
+      {
+        continue;
+      }
+
+      const double current_fv = ephemeris.FractionVisible(target_bodies[sun_index],
+                                                          target_bodies[i]);
+      if(current_fv < fraction_visible){
+        fraction_visible = current_fv;
+      }
+    }
   }
 }
 
