@@ -452,6 +452,8 @@ double Ephemeris::FractionVisible(const string& referenceBody,
     return (ref_area - occ_area) / ref_area;
   }
 
+  // Solution for intersection area of two circles taken from:
+  // https://stackoverflow.com/questions/4247889/area-of-intersection-between-two-circles
   double r = ref_radius;
   double R = occ_radius;
   if(R < r){
