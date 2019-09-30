@@ -144,9 +144,9 @@ broadcast_transforms(tf2_ros::TransformBroadcaster broadcaster,
   }
 
   // Compute amount of sun occultation by another body.
-  // This algorithm finds the smallest of simple body-to-body occultation events.
-  // It does not handle the extremely unlikely case of occultation my multiple
-  // bodies simultaneously.
+  // This algorithm finds the minimum value output by simple body-to-body
+  // occultation events. It does not handle the extremely unlikely case of
+  // occultation my multiple bodies simultaneously.
   double fraction_visible = 1.0;
   if (sun_index >= 0 && target_bodies.size() > 1)
   {
@@ -182,7 +182,7 @@ have_run_parameters_file(int argc, char *argv[], ros::NodeHandle &nodeHandle,
   run_parameters_filename = "run_parameters.yaml";
     
   // Check for run parameter file arg passed via rosrun or roslaunch:
-  if (!nodeHandle.getParam("run_parameters_file", run_parameters_filename))
+  if (!ros::param::get("~run_parameters_file", run_parameters_filename))
   {
     // Check for non-ROS command line args
     Options options;
@@ -309,42 +309,42 @@ read_run_parameters(const string &run_parameters_filename, string &reference_bod
 }
 
 bool
-read_ros_run_parameters(ros::NodeHandle nodeHandle, string &reference_body,
+read_ros_run_parameters(string &reference_body,
 			vector<string> &target_bodies,
 			float64_ow &mission_lat, float64_ow &mission_lon,
 			float64_ow &mission_elev, bool &z_down_surface_frame,
 			string &leapSecondKernelPath, string &constantsKernelPath, 
 			vector<string> &ephemerisPaths)
 {
-  if (!nodeHandle.getParam("reference_body", reference_body))
+  if (!ros::param::get("~reference_body", reference_body))
     return false;
   
-  if (!nodeHandle.getParam("target_bodies", target_bodies))
+  if (!ros::param::get("~target_bodies", target_bodies))
     return false;
-  
-  if (!nodeHandle.getParam("mission_lat", mission_lat))
+
+  if (!ros::param::get("~mission_lat", mission_lat))
     return false;
-  
-  if (!nodeHandle.getParam("mission_lon", mission_lon))
+
+  if (!ros::param::get("~mission_lon", mission_lon))
     return false;
 
   mission_elev = 0.0;
-  if (!nodeHandle.getParam("mission_elev", mission_elev))
+  if (!ros::param::get("~mission_elev", mission_elev))
     ROS_INFO_STREAM("WARNING [read_ros_run_parameters()]: "
-		    "no mission elevation specified, assuming elevation = 0");
+        "no mission elevation specified, assuming elevation = 0");
   z_down_surface_frame = true;
-  if (!nodeHandle.getParam("z_down_surface_frame", z_down_surface_frame))
+  if (!ros::param::get("~z_down_surface_frame", z_down_surface_frame))
     ROS_INFO_STREAM("WARNING [read_ros_run_parameters()]: "
-		    "surface frame Z axis direction not specified, "
-		    "assuming Z down.");
+        "surface frame Z axis direction not specified, "
+        "assuming Z down.");
 
-  if (!nodeHandle.getParam("leap_second_kernel", leapSecondKernelPath))
+  if (!ros::param::get("~leap_second_kernel", leapSecondKernelPath))
     return false;
-  
-  if (!nodeHandle.getParam("constants_kernel", constantsKernelPath))
+
+  if (!ros::param::get("~constants_kernel", constantsKernelPath))
     return false;
-  
-  if (!nodeHandle.getParam("ephemerides", ephemerisPaths))
+
+  if (!ros::param::get("~ephemerides", ephemerisPaths))
     return false;
 
   return true;
@@ -359,14 +359,13 @@ main(int argc, char *argv[])
   
   // ROS initialization
   ros::init(argc, argv, "ephemeris_publisher_node");
-  ros::NodeHandle nodeHandle("~");
+  ros::NodeHandle nodeHandle;
   tf2_ros::TransformBroadcaster broadcaster;
-  tf2_ros::StaticTransformBroadcaster static_broadcaster;
   // Set the transform update rate
   ROS_INFO_STREAM("Starting ephemeris publisher node!");
   string publishPeriodString;
   int publishPeriod;
-  if (nodeHandle.getParam("ephemeris_publisher_period", publishPeriodString))
+  if (ros::param::get("~ephemeris_publisher_period", publishPeriodString))
     publishPeriod = atoi(publishPeriodString.c_str());
   else
     publishPeriod = 5; // The default period
@@ -381,38 +380,38 @@ main(int argc, char *argv[])
   vector<string> ephemerisPaths;
 
   set_default_run_parameters(reference_body, target_bodies,
-			     mission_lat, mission_lon, mission_elev,
-			     z_down_surface_frame,
-			     leapSecondKernelPath, constantsKernelPath, 
-			     ephemerisPaths);
+           mission_lat, mission_lon, mission_elev,
+           z_down_surface_frame,
+           leapSecondKernelPath, constantsKernelPath,
+           ephemerisPaths);
   if (have_non_ros_paramater_file_option(argc, argv, run_parameters_filename))
   {
     if (!read_run_parameters(run_parameters_filename,
-			     reference_body, target_bodies,
-			     mission_lat, mission_lon, mission_elev,
-			     z_down_surface_frame,
-			     leapSecondKernelPath, constantsKernelPath, 
-			     ephemerisPaths))
+           reference_body, target_bodies,
+           mission_lat, mission_lon, mission_elev,
+           z_down_surface_frame,
+           leapSecondKernelPath, constantsKernelPath,
+           ephemerisPaths))
     {
       cerr << "FATAL ERROR [main()]: "
-	   << "unable to read run time parameters file. Exiting." << endl;
+     << "unable to read run time parameters file. Exiting." << endl;
       exit(-1);
     }
   }
   else
   {
-    if (!read_ros_run_parameters(nodeHandle, reference_body, target_bodies,
-				 mission_lat, mission_lon, mission_elev,
-				 z_down_surface_frame,
-				 leapSecondKernelPath, constantsKernelPath, 
-				 ephemerisPaths))
+    if (!read_ros_run_parameters(reference_body, target_bodies,
+         mission_lat, mission_lon, mission_elev,
+         z_down_surface_frame,
+         leapSecondKernelPath, constantsKernelPath,
+         ephemerisPaths))
     {
       cerr << "FATAL ERROR [main()]: "
-	   << "unable to read all ROS run time parameters. Exiting." << endl;
+     << "unable to read all ROS run time parameters. Exiting." << endl;
       exit(-1);
     }
   }
-  
+
   Ephemeris ephemeris(leapSecondKernelPath, constantsKernelPath, ephemerisPaths, z_down_surface_frame);
   
   // Broadcasting loop
@@ -421,22 +420,22 @@ main(int argc, char *argv[])
   ROS_INFO_STREAM("Entering broadcasting loop...");
   while (ros::ok())
   {
-    // Get the current time and make sure it is reasonable.    
+    // Get the current time and make sure it is reasonable.
     ros::Time current_time = ros::Time::now();
-    if (current_time.sec < 400000000) // An arbitrary time very far from 0! 
+    if (current_time.sec < 400000000) // An arbitrary time very far from 0!
     {
       if (!first_error) // This always happens once in sim so suppress
-			// the first error message.
+      // the first error message.
         ROS_ERROR_STREAM("Got low value for ros::Time::now() in the solar frame publisher: "
                          << current_time);
       first_error = false;
       sleep(3); // Wait to see if a valid time is published
       continue;
     }
-    
-    broadcast_transforms(broadcaster, reference_body, mission_lat, mission_lon,
-			 mission_elev,
-			 target_bodies, current_time, ephemeris);
+
+    broadcast_transforms(broadcaster, reference_body,
+                         mission_lat, mission_lon, mission_elev,
+                         target_bodies, current_time, ephemeris);
     
     publishRate.sleep();
   }
