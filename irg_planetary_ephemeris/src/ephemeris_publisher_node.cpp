@@ -8,6 +8,7 @@
 #include <yaml-cpp/yaml.h>
 
 #include <ros/ros.h>
+#include <std_msgs/Float64.h>
 #include <std_msgs/String.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Transform.h>
@@ -107,6 +108,7 @@ make_time_stamped_transform(const std::string &reference_body,
 
 void
 broadcast_transforms(tf2_ros::TransformBroadcaster broadcaster,
+         ros::Publisher& sun_occultation_pub,
 		     const string& reference_body,
 		     const float64_ow lat, const float64_ow lon,
 		     const float64_ow elev,
@@ -163,6 +165,10 @@ broadcast_transforms(tf2_ros::TransformBroadcaster broadcaster,
         fraction_visible = current_fv;
       }
     }
+
+    std_msgs::Float64 msg;
+    msg.data = fraction_visible;
+    sun_occultation_pub.publish(msg);
   }
 }
 
@@ -371,6 +377,8 @@ main(int argc, char *argv[])
     publishPeriod = 5; // The default period
   ROS_INFO_STREAM("Setting publish period to " << publishPeriod);
 
+  ros::Publisher sun_occultation_pub = nodeHandle.advertise<std_msgs::Float64>("sun_occultation", 1);
+
   string run_parameters_filename;
   string reference_body;
   vector<string> target_bodies;
@@ -433,7 +441,7 @@ main(int argc, char *argv[])
       continue;
     }
 
-    broadcast_transforms(broadcaster, reference_body,
+    broadcast_transforms(broadcaster, sun_occultation_pub, reference_body,
                          mission_lat, mission_lon, mission_elev,
                          target_bodies, current_time, ephemeris);
     
