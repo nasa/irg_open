@@ -16,7 +16,8 @@ Ephemeris::Ephemeris()
   m_leapSecondKernelPath = "./latest_leapseconds.tls";
   m_constantsKernelPath =  "./pck00010.tpc";
   m_ephemerisPaths.push_back("./de430.bsp");
-
+  m_z_down_surface_frame = true;
+  
   // Set the SPICELIB error response action to "RETURN":
   erract_c("SET", 0, (char *) "RETURN");
 
@@ -25,12 +26,14 @@ Ephemeris::Ephemeris()
 
 Ephemeris::Ephemeris(const string& leapSecondKernelPath,
 		     const string& constantsKernelPath,
-		     const string& ephemerisPath)
+		     const string& ephemerisPath,
+		     bool z_down_surface_frame)
 { 
   m_ephemerisHandle = 0;
   m_leapSecondKernelPath = leapSecondKernelPath;
   m_constantsKernelPath = constantsKernelPath;
   m_ephemerisPaths.push_back(ephemerisPath);
+  m_z_down_surface_frame = z_down_surface_frame;
 
   // Set the SPICELIB error response action to "RETURN":
   erract_c("SET", 0, (char *) "RETURN");
@@ -40,13 +43,15 @@ Ephemeris::Ephemeris(const string& leapSecondKernelPath,
 
 Ephemeris::Ephemeris(const string& leapSecondKernelPath,
 		     const string& constantsKernelPath,
-		     const vector<string>& ephemerisPaths)
+		     const vector<string>& ephemerisPaths,
+		     bool z_down_surface_frame)
 { 
   m_ephemerisHandle = 0;
   m_leapSecondKernelPath = leapSecondKernelPath;
   m_constantsKernelPath = constantsKernelPath;
-  for (int i; i < ephemerisPaths.size(); ++i)
+  for (int i = 0; i < ephemerisPaths.size(); ++i)
     m_ephemerisPaths.push_back(ephemerisPaths[i]);
+  m_z_down_surface_frame = z_down_surface_frame;
 
   // Set the SPICELIB error response action to "RETURN":
   erract_c("SET", 0, (char *) "RETURN");
@@ -90,13 +95,12 @@ void Ephemeris::BodyToBodyTransform(const string& referenceBody,
   SpiceInt dim;
   logical found;		// SpiceInt, logical & integer are SPICE types
   integer ref_body_id;
-  string frameName;
 
   // Convert the time string to ephemeris time
   str2et_c(time.c_str(), &ephemTime);
 
   // Compute target state in reference body frame with a single call to SPKEZR
-  frameName = "IAU_" + referenceBody;
+  string frameName = "IAU_" + referenceBody;
   spkezr_c(targetBody.c_str(), ephemTime, frameName.c_str(), "LT+S",
 	   referenceBody.c_str(),
 	   state, &lightTime);
@@ -106,10 +110,12 @@ void Ephemeris::BodyToBodyTransform(const string& referenceBody,
 
   // Calculate translation from target to surface in body reference
   // frame.
-  vpack_c(-target_in_ref_frame[0], -target_in_ref_frame[1], -target_in_ref_frame[2], translation);
+  vpack_c(-target_in_ref_frame[0], -target_in_ref_frame[1],
+	  -target_in_ref_frame[2], translation);
 
   // Get rotation from reference body to target body
-  pxform_c(referenceBody.c_str(), targetBody.c_str(), ephemTime,
+  string targetFrameName = "IAU_" + targetBody;
+  pxform_c(frameName.c_str(), targetFrameName.c_str(), ephemTime,
 	   rotation);
 
   // The following assumes column vector notation, and row-major
@@ -133,30 +139,35 @@ void Ephemeris::BodyToBodyTransform(const string& referenceBody,
   transform[15] = 1.0;
 }
 
-
 void Ephemeris::SurfaceToTargetBodyTransform(const string& referenceBody,
 					     const float64_ow lat,
 					     const float64_ow lon,
+					     const float64_ow elev,
 					     const string& targetBody,
 					     const string& time,
 					     float64_ow transform[16])
 {
+  const SpiceInt X_axis_ID = 1, Y_axis_ID = 2, Z_axis_ID = 3;
   const SpiceDouble z_axis[3] = {0.0, 0.0, 1.0};
   SpiceDouble ref_radii[3];
   SpiceInt max_radii_dim = sizeof(ref_radii)/sizeof(ref_radii[0]);
   SpiceDouble state[6];
   SpiceDouble ref_surf_point[3];
   SpiceDouble ref_surf_normal[3];
-  SpiceDouble ref_to_surf_rotation[3][3], surf_to_target_rotation[3][3];
+  SpiceDouble ref_to_surf_rotation[3][3] = {{0.0, 0.0, 0.0},
+					    {0.0,0.0,0.0},
+					    {0.0,0.0,0.0}};
+  SpiceDouble surf_to_target_rotation[3][3] = {{0.0, 0.0, 0.0},
+					       {0.0,0.0,0.0},
+					       {0.0,0.0,0.0}};
   SpiceDouble target_in_ref_frame[3];
-  SpiceDouble translation[3];
-  SpiceDouble rotation[3][3];
+  SpiceDouble translation[3] = {0.0, 0.0, 0.0};
+  SpiceDouble rotation[3][3] = {{0.0, 0.0, 0.0},{0.0,0.0,0.0},{0.0,0.0,0.0}};
   SpiceDouble lightTime;
   SpiceDouble ephemTime;
   SpiceInt dim;
   logical found;		// SpiceInt, logical & integer are SPICE types
   integer ref_body_id;
-  string frameName;
 
   // Convert the time string to ephemeris time
   str2et_c(time.c_str(), &ephemTime);
@@ -172,39 +183,49 @@ void Ephemeris::SurfaceToTargetBodyTransform(const string& referenceBody,
 
   // Compute cartesian coordinates of the specified lat/lon on the
   // reference body surface (assumes planetocentric lat/lon)
-  srfrec_c(ref_body_id, lon, lat, ref_surf_point);
+  srfrec_c(ref_body_id, lon * rpd_c(), lat * rpd_c(), ref_surf_point);
 
   // Compute reference body surface normal
-  surfnm_c(ref_radii[0], ref_radii[1], ref_radii[2], ref_surf_point, ref_surf_normal);
+  surfnm_c(ref_radii[0], ref_radii[1], ref_radii[2], ref_surf_point,
+	   ref_surf_normal);
 
-  // Compute surface transform matrix - this defines a surface frame
-  // with X-north, Y-west, and Z-up
-  twovec_c(ref_surf_normal, 3, z_axis, 1, ref_to_surf_rotation);
-  // Should follow with a 180 deg rotation about X, since mission site
-  // frames are Z-down!
+  // Compute surface transform matrix - using the normal to the
+  // surface, twovec_c defines a surface frame with X-North, Y-West,
+  // and Z-up. We negate the normal for X-North, Y-East, and Z-down.
+  if (m_z_down_surface_frame)
+  {
+    ref_surf_normal[0] = -ref_surf_normal[0];
+    ref_surf_normal[1] = -ref_surf_normal[1];
+    ref_surf_normal[2] = -ref_surf_normal[2];
+  }
+  twovec_c(ref_surf_normal, Z_axis_ID, z_axis, X_axis_ID, ref_to_surf_rotation);
 
   // Compute target state in reference body frame with a single call to SPKEZR
-  frameName = "IAU_" + referenceBody;
-  spkezr_c(targetBody.c_str(), ephemTime, frameName.c_str(), "LT+S", referenceBody.c_str(),
-	   state, &lightTime);
+  string frameName = "IAU_" + referenceBody;
+  spkezr_c(targetBody.c_str(), ephemTime, frameName.c_str(), "LT+S",
+	   referenceBody.c_str(), state, &lightTime);
 	
   // Extract 3-component target position from the 6-component state.
   vpack_c(state[0], state[1], state[2], target_in_ref_frame);
 
-  // Calculate translation from target to surface in body reference
-  // frame.
-  vsub_c(ref_surf_point, target_in_ref_frame, translation);
+  // Calculate vector from surface to target in body reference frame.
+  // I.e., target_in_ref_frame - ref_surf_point
+  vsub_c(target_in_ref_frame, ref_surf_point, translation);
 
-  // Transform translation from body reference frame to surface frame
+  // Rotate the target vector from body reference frame to surface
+  // frame. This will be the translation component of the transform.
   mxv_c(ref_to_surf_rotation, translation, translation);
 
-  // Get rotation from reference body to target body
-  pxform_c(referenceBody.c_str(), targetBody.c_str(), ephemTime,
+  // Get rotation from reference body to target body. We want the
+  // matrix that will transform vectors in target body frame to
+  // reference body frame.
+  string targetFrameName = "IAU_" + targetBody;
+  pxform_c(targetFrameName.c_str(), frameName.c_str(), ephemTime,
 	   rotation);
-
-  // Concatenate the reference body to target body rotation with the
-  // transpose of the reference body to surface rotation
-  mxmt_c(rotation, ref_to_surf_rotation, surf_to_target_rotation);
+  
+  // Concatenate the the reference body to surface rotation with the
+  // reference body to target body rotation.
+  mxm_c(ref_to_surf_rotation, rotation, surf_to_target_rotation);
 
   // The following assumes column vector notation, and row-major
   // storage. It transforms points given in surface frame to target
@@ -230,6 +251,7 @@ void Ephemeris::SurfaceToTargetBodyTransform(const string& referenceBody,
 void Ephemeris::VectorToTarget(const string& referenceBody,
 			       const float64_ow lat,
 			       const float64_ow lon,
+			       const float64_ow elev,
 			       const string& targetBody,
 			       const string& time,
 			       float64_ow out_vec[3])
@@ -250,7 +272,6 @@ void Ephemeris::VectorToTarget(const string& referenceBody,
   SpiceInt dim;
   logical found;		// SpiceInt, logical & integer are SPICE types
   integer ref_body_id;
-  string frameName;
 
   // Convert the time string to ephemeris time
   str2et_c(time.c_str(), &ephemTime);
@@ -266,20 +287,36 @@ void Ephemeris::VectorToTarget(const string& referenceBody,
   // (assumes planetocentric lat/lon)
   latrec_c(1.0, lon * rpd_c(), lat * rpd_c(), vec_from_ref_center);
 
-  // Compute surface point on reference body in rectangular coordinates and with ellipsoid
-  surfpt_c(ref_center, vec_from_ref_center, ref_radii[0], ref_radii[1], ref_radii[2], 
-	   ref_surf_point, (int*) &found);
+  // Compute surface point on reference body in rectangular
+  // coordinates and with ellipsoid
+  surfpt_c(ref_center, vec_from_ref_center, ref_radii[0], ref_radii[1],
+	   ref_radii[2], ref_surf_point, (int*) &found);
 
   // Compute surface normal
-  surfnm_c(ref_radii[0], ref_radii[1], ref_radii[2], ref_surf_point, ref_surf_normal);
+  surfnm_c(ref_radii[0], ref_radii[1], ref_radii[2], ref_surf_point,
+	   ref_surf_normal);
 
-  // Compute transform matrix
-  twovec_c(ref_surf_normal, 3, z_axis, 1, ref_to_surf_rotation);
-
+  // Compute surface frame rotation matrix - as called, twovec_c
+  // defines a surface frame with X-north, Y-west, and Z-up
+  if (m_z_down_surface_frame)
+  {
+    // If Z down surface frame (typical for missions), we rotate 180
+    // degrees about X-axis here.
+    SpiceDouble ref_to_surf_rotation_z_up[3][3];
+    twovec_c(ref_surf_normal, 3, z_axis, 1, ref_to_surf_rotation_z_up);
+    const SpiceInt X_axis = 1;
+    rotmat_c(ref_to_surf_rotation_z_up, 180.0*rpd_c(), X_axis,
+	     ref_to_surf_rotation);
+  }
+  else
+  {
+    twovec_c(ref_surf_normal, 3, z_axis, 1, ref_to_surf_rotation);
+  }
+  
   // Compute target state in reference frame with a single call to SPKEZR
-  frameName = "IAU_" + referenceBody;
-  spkezr_c(targetBody.c_str(), ephemTime, frameName.c_str(), "LT+S", referenceBody.c_str(),
-	   state, &lightTime);
+  string frameName = "IAU_" + referenceBody;
+  spkezr_c(targetBody.c_str(), ephemTime, frameName.c_str(), "LT+S",
+	   referenceBody.c_str(), state, &lightTime);
 
   if (failed_c())  // If we have an error, return early
   {
@@ -298,11 +335,15 @@ void Ephemeris::VectorToTarget(const string& referenceBody,
   // Compute target's pointing vector in reference frame.
   vsub_c(target_in_ref_frame, ref_surf_point, target_vec);
 
-  // Transform reference frame to surface frame and normalize to unit vector
+  // Rotate target vector by reference frame to surface frame rotation
   mxv_c(ref_to_surf_rotation, target_vec, target_vec);
-  // Normalize target vector
-  vhat_c(target_vec, target_vec);
 
+  // NOTE: we ignore the translation to the surface. Should be a
+  // negligible effect in interplanetary cases. Probably
+  // non-negligible for orbiters.
+
+  // Normalize vector to target
+  vhat_c(target_vec, target_vec);
   
   // Copy the target vector to the output, only done in case the
   // out_vec type differs from SpiceDouble
@@ -321,8 +362,6 @@ void Ephemeris::PlanetoGraphicToCentric(const string& planetaryBody,
 {
   SpiceDouble radii[3];
   SpiceInt max_radii_dim = sizeof(radii)/sizeof(radii[0]);
-  integer body_id(0);	// integer, logical & SpiceInt are SPICE types
-  logical found(0);
   SpiceInt dim(0);
 
   // Get radius of body -- Deprecated
@@ -339,13 +378,22 @@ void Ephemeris::PlanetoGraphicToCentric(const string& planetaryBody,
   out_lat = (atan((1.0 - e_sqr) * tan(in_lat * rpd_c()))) / rpd_c();
 
   // Convert planetographic longitude if necessary
-  // Earth = 399, Venus = 299
-  if (body_id == VENUS_BODY_ID || body_id == EARTH_BODY_ID) 
+  SpiceInt body_id(0);
+  SpiceBoolean found(0);
+  bodn2c_c(planetaryBody.c_str(), &body_id, &found);
+  // Unknown body errors should be signalled above, so we don't warn
+  // here.
+  if (found)
   {
-    out_lon = in_lon;
-  } 
-  else
-  {
-    out_lon = -in_lon;
+    // plnsns() apparently only exists as a Fortran function. There is
+    // no CSPICE version yet.
+    SpiceInt lon_conversion = plnsns_(&body_id);
+    if (lon_conversion != 0)
+      out_lon = lon_conversion * in_lon;
+    else
+      cerr << "WARNING [PlanetoGraphicToCentric()]: "
+	   << "longitude sense not available for"
+	   << planetaryBody << ". Longitude conversion skipped."
+	   << endl;
   }
 }
