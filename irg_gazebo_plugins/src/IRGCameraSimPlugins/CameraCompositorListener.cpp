@@ -70,10 +70,7 @@ void CameraCompositorListener::initParam(std::string name, double initial_value)
     //[this, name](const std_msgs::Float64::ConstPtr& msg){ m_param_map[name].m_value = msg->data; };
 
   // Subscribe using our fancy bound function pointer.
-  //m_param_map[name].m_subscriber = m_node_handle->subscribe(topic, 1, func);
-  
-  m_param_map[name].m_subscriber = m_node_handle->create_subscription<std_msgs::msg::Float64>(topic, func);
-  
+  m_param_map[name].m_subscriber = m_node_handle->create_subscription<std_msgs::msg::Float64>(topic, 1, func);
 }
 
 void CameraCompositorListener::onParamUpdate(const std_msgs::msg::Float64::SharedPtr msg, std::string name)
