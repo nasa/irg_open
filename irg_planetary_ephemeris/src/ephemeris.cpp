@@ -139,7 +139,6 @@ void Ephemeris::BodyToBodyTransform(const string& referenceBody,
   transform[15] = 1.0;
 }
 
-
 void Ephemeris::SurfaceToTargetBodyTransform(const string& referenceBody,
 					     const float64_ow lat,
 					     const float64_ow lon,
@@ -148,16 +147,22 @@ void Ephemeris::SurfaceToTargetBodyTransform(const string& referenceBody,
 					     const string& time,
 					     float64_ow transform[16])
 {
+  const SpiceInt X_axis_ID = 1, Y_axis_ID = 2, Z_axis_ID = 3;
   const SpiceDouble z_axis[3] = {0.0, 0.0, 1.0};
   SpiceDouble ref_radii[3];
   SpiceInt max_radii_dim = sizeof(ref_radii)/sizeof(ref_radii[0]);
   SpiceDouble state[6];
   SpiceDouble ref_surf_point[3];
   SpiceDouble ref_surf_normal[3];
-  SpiceDouble ref_to_surf_rotation[3][3], surf_to_target_rotation[3][3];
+  SpiceDouble ref_to_surf_rotation[3][3] = {{0.0, 0.0, 0.0},
+					    {0.0,0.0,0.0},
+					    {0.0,0.0,0.0}};
+  SpiceDouble surf_to_target_rotation[3][3] = {{0.0, 0.0, 0.0},
+					       {0.0,0.0,0.0},
+					       {0.0,0.0,0.0}};
   SpiceDouble target_in_ref_frame[3];
-  SpiceDouble translation[3];
-  SpiceDouble rotation[3][3];
+  SpiceDouble translation[3] = {0.0, 0.0, 0.0};
+  SpiceDouble rotation[3][3] = {{0.0, 0.0, 0.0},{0.0,0.0,0.0},{0.0,0.0,0.0}};
   SpiceDouble lightTime;
   SpiceDouble ephemTime;
   SpiceInt dim;
@@ -184,23 +189,17 @@ void Ephemeris::SurfaceToTargetBodyTransform(const string& referenceBody,
   surfnm_c(ref_radii[0], ref_radii[1], ref_radii[2], ref_surf_point,
 	   ref_surf_normal);
 
-  // Compute surface transform matrix - as called, twovec_c defines a
-  // surface frame with X-north, Y-west, and Z-up
+  // Compute surface transform matrix - using the normal to the
+  // surface, twovec_c defines a surface frame with X-North, Y-West,
+  // and Z-up. We negate the normal for X-North, Y-East, and Z-down.
   if (m_z_down_surface_frame)
   {
-    // If Z down surface frame (typical for missions), we rotate 180
-    // degrees about X-axis here.
-    SpiceDouble ref_to_surf_rotation_z_up[3][3];
-    twovec_c(ref_surf_normal, 3, z_axis, 1, ref_to_surf_rotation_z_up);
-    const SpiceInt X_axis = 1;
-    rotmat_c(ref_to_surf_rotation_z_up, 180.0*rpd_c(), X_axis,
-	     ref_to_surf_rotation);
+    ref_surf_normal[0] = -ref_surf_normal[0];
+    ref_surf_normal[1] = -ref_surf_normal[1];
+    ref_surf_normal[2] = -ref_surf_normal[2];
   }
-  else
-  {
-    twovec_c(ref_surf_normal, 3, z_axis, 1, ref_to_surf_rotation);
-  }
-    
+  twovec_c(ref_surf_normal, Z_axis_ID, z_axis, X_axis_ID, ref_to_surf_rotation);
+
   // Compute target state in reference body frame with a single call to SPKEZR
   string frameName = "IAU_" + referenceBody;
   spkezr_c(targetBody.c_str(), ephemTime, frameName.c_str(), "LT+S",
@@ -209,21 +208,24 @@ void Ephemeris::SurfaceToTargetBodyTransform(const string& referenceBody,
   // Extract 3-component target position from the 6-component state.
   vpack_c(state[0], state[1], state[2], target_in_ref_frame);
 
-  // Calculate translation from target to surface in body reference
-  // frame.
-  vsub_c(ref_surf_point, target_in_ref_frame, translation);
+  // Calculate vector from surface to target in body reference frame.
+  // I.e., target_in_ref_frame - ref_surf_point
+  vsub_c(target_in_ref_frame, ref_surf_point, translation);
 
-  // Transform translation from body reference frame to surface frame
+  // Rotate the target vector from body reference frame to surface
+  // frame. This will be the translation component of the transform.
   mxv_c(ref_to_surf_rotation, translation, translation);
 
-  // Get rotation from reference body to target body
+  // Get rotation from reference body to target body. We want the
+  // matrix that will transform vectors in target body frame to
+  // reference body frame.
   string targetFrameName = "IAU_" + targetBody;
-  pxform_c(frameName.c_str(), targetFrameName.c_str(), ephemTime,
+  pxform_c(targetFrameName.c_str(), frameName.c_str(), ephemTime,
 	   rotation);
-
-  // Concatenate the reference body to target body rotation with the
-  // transpose of the reference body to surface rotation
-  mxmt_c(rotation, ref_to_surf_rotation, surf_to_target_rotation);
+  
+  // Concatenate the the reference body to surface rotation with the
+  // reference body to target body rotation.
+  mxm_c(ref_to_surf_rotation, rotation, surf_to_target_rotation);
 
   // The following assumes column vector notation, and row-major
   // storage. It transforms points given in surface frame to target
@@ -294,8 +296,8 @@ void Ephemeris::VectorToTarget(const string& referenceBody,
   surfnm_c(ref_radii[0], ref_radii[1], ref_radii[2], ref_surf_point,
 	   ref_surf_normal);
 
-  // Compute surface transform matrix - as called, twovec_c defines a
-  // surface frame with X-north, Y-west, and Z-up
+  // Compute surface frame rotation matrix - as called, twovec_c
+  // defines a surface frame with X-north, Y-west, and Z-up
   if (m_z_down_surface_frame)
   {
     // If Z down surface frame (typical for missions), we rotate 180
@@ -333,11 +335,15 @@ void Ephemeris::VectorToTarget(const string& referenceBody,
   // Compute target's pointing vector in reference frame.
   vsub_c(target_in_ref_frame, ref_surf_point, target_vec);
 
-  // Transform reference frame to surface frame and normalize to unit vector
+  // Rotate target vector by reference frame to surface frame rotation
   mxv_c(ref_to_surf_rotation, target_vec, target_vec);
-  // Normalize target vector
-  vhat_c(target_vec, target_vec);
 
+  // NOTE: we ignore the translation to the surface. Should be a
+  // negligible effect in interplanetary cases. Probably
+  // non-negligible for orbiters.
+
+  // Normalize vector to target
+  vhat_c(target_vec, target_vec);
   
   // Copy the target vector to the output, only done in case the
   // out_vec type differs from SpiceDouble
