@@ -55,7 +55,17 @@ This is a model plugin that can only be use within a Gazebo `<model>` tag like t
 #### Explanation
 This plugin can be used to position a model in the sky using a given frame. The
 given frame is looked up relative to `celestial_body_origin`. This will affect
-the rotation of a body and its position relative to Gazebo's origin.
+the rotation of a body and its position relative to Gazebo's origin. You will
+probably want something like this in your launch file to integrate this frame
+into your scene:
+```
+  <node name="site_to_celestial_body_origin" pkg="tf" type="static_transform_publisher"
+    args="0 0 0 0 0 0 site_frame celestial_body_origin 1000" />
+  <node name="celestial_body_origin_to_moon" pkg="tf" type="static_transform_publisher"
+    args="0 0 0 1.570796327 0 0 celestial_body_origin moon 1000" />
+```
+The "moon" frame in that example would be the reference frame in your
+`irg_planetary_ephemeris` config file.
 
 If `<light_source>` is set to true, the rotation will be set to affect the light
 direction instead of affecting the celestial body's rotation. The direction of
