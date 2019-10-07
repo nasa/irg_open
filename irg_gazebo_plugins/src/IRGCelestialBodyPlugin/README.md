@@ -74,3 +74,10 @@ sun or other stars.
 
 Models that use this plugin can be found in `irg_open/irg_planetary_ephemeris/models/`
 
+#### To-do
+There is no mechanism to set this plugin's params in a launch script or at
+runtime. They can only be set where they are hardcoded in model files. It would
+be possible to set them with global params in ROS1, but ROS2 has no global
+parameter server. It would be good to add this flexibility after ROS2 has some
+way of doing this, such as a global or namespaced parameter server.
+
