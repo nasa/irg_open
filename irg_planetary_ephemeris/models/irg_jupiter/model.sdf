@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<sdf version='1.6'>
+
+  <model name="irg_jupiter">
+    <!-- This pose will be overridden by CelestialBodyPlugin. -->
+    <pose>0 0 0  0 0 0</pose>
+    <static>0</static>
+    <link name='ellipsoid'>
+      <gravity>0</gravity>
+      <visual name="visual">
+        <pose>0 0 0  1.570796327 0 0</pose>
+        <cast_shadows>true</cast_shadows>
+        <geometry>
+          <sphere>
+            <radius>1</radius>
+          </sphere>
+        </geometry>
+        <material>
+          <script>
+            <uri>model://irg_earth/materials/scripts</uri>
+            <uri>model://irg_jupiter/materials/textures</uri>
+            <name>irg/jupiter</name>
+          </script>
+        </material>
+      </visual>
+    </link>
+    <plugin name="CelestialBody" filename="libIRGCelestialBodyPlugin.so">
+      <frame>jupiter</frame>
+      <radius>71492000</radius>
+      <render_distance>150000</render_distance>
+    </plugin>
+  </model>
+
+</sdf>
