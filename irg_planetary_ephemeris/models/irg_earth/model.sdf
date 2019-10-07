@@ -27,7 +27,7 @@
     <plugin name="CelestialBody" filename="libIRGCelestialBodyPlugin.so">
       <frame>earth</frame>
       <radius>6378100</radius>
-      <render_distance>150000</render_distance>
+      <render_distance>170000</render_distance>
     </plugin>
   </model>
 
