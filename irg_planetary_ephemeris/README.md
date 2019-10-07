@@ -3,7 +3,7 @@ irg_planetary_ephemeris
 
 ### Models
 Models of the sun and some planets are in the `models` directory. They use
-`IRGCelestialBodyPlugin` to allow them to be positioned in the sky. The sun
+`IRGCelestialBodyPlugin` to allow them to be positioned in the sky. irg_sun
 renders at a distance of 190000, while the planets render at a distance of
 170000. These values more than different enough to prevent z-fighting when the
 sun passes behind a planet, and they are close enough to be within the default
