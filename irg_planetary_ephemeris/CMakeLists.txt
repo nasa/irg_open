@@ -112,6 +112,10 @@ catkin_package(
 #  DEPENDS system_lib
 )
 
+catkin_add_env_hooks(
+  70.irg_planetary_ephemeris
+  SHELLS sh DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/env-hooks)
+
 ###########
 ## Build ##
 ###########
