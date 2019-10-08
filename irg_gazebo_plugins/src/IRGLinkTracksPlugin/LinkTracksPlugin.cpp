@@ -10,6 +10,9 @@
 #include <gazebo/rendering/Heightmap.hh>
 #include <gazebo/common/Image.hh>
 
+#include <OGRE/Terrain/OgreTerrainGroup.h>
+
+#include <GL/gl.h> 
 
 using namespace std;
 using namespace gazebo;
@@ -25,6 +28,7 @@ LinkTracksPlugin::LinkTracksPlugin() :
   mTexWidth(0),
   mTexHeight(0),
   mTextureName("wheelTracks"),
+  mDrawEnabled(true),
   mMinDistThresh(0.05),
   mTrackWidth(4.5),
   mTrackDepth(1.0),
@@ -101,7 +105,12 @@ void LinkTracksPlugin::Load(rendering::VisualPtr _sensor, sdf::ElementPtr _sdf)
   //-- min distance threshold
   if (_sdf->HasElement("min_dist_thresh")) {
     mMinDistThresh = _sdf->Get<double>("min_dist_thresh");
-    mMinDistThresh = max(mTrackExp, 0.001);
+    mMinDistThresh = max(mMinDistThresh, 0.001);
+  }
+  
+  //-- initial draw state
+  if (_sdf->HasElement("draw_enabled")) {
+    mDrawEnabled = _sdf->Get<bool>("draw_enabled");
   }
   
   //== subscribe to ROS messages ==============
@@ -123,6 +132,13 @@ void LinkTracksPlugin::Load(rendering::VisualPtr _sensor, sdf::ElementPtr _sdf)
     boost::bind(&LinkTracksPlugin::OnUpdate, this));
 }
 
+static uint32_t MAX_ERRORS        = 50;
+static uint32_t sceneErrors       = 0;
+static uint32_t heightmapErrors   = 0;
+static uint32_t materialErrors    = 0;
+static uint32_t normalsTusErrors  = 0;
+static uint32_t textureNameErrors = 0;
+
 /**
  * Create texture to draw into 
  * @returns true if texture already exists or has successfully been created
@@ -136,13 +152,17 @@ bool LinkTracksPlugin::InitTexture()
 
   rendering::ScenePtr scene = rendering::get_scene();
   if (!scene) {
-    gzerr << "LinkTracksPlugin::InitTexture - scene pointer is NULL" << endl;
+    if(sceneErrors++ < MAX_ERRORS) {
+      gzerr << "LinkTracksPlugin::InitTexture - scene pointer is NULL" << endl;
+    }
     return false;
   }
 
   rendering::Heightmap* heightmap = scene->GetHeightmap();
   if (!heightmap) {
-    gzerr << "LinkTracksPlugin::InitTexture - heightmap pointer is NULL" << endl;
+    if(heightmapErrors++ < MAX_ERRORS) {
+      gzerr << "LinkTracksPlugin::InitTexture - heightmap pointer is NULL" << endl;
+    }
     return false;
   }
 
@@ -150,18 +170,37 @@ bool LinkTracksPlugin::InitTexture()
   // assign the new link tracks texture.
   MaterialPtr parentMat = MaterialManager::getSingleton().getByName(heightmap->MaterialName());
   if (parentMat.isNull()) {
-    gzerr << "LinkTracksPlugin::InitTexture - material pointer is NULL" << endl;
+    if(materialErrors++ < MAX_ERRORS) {
+      gzerr << "LinkTracksPlugin::InitTexture - material pointer is NULL" << endl;
+    }
     return false;
   }
+  
   // Get dimensions of terrain.
   TextureUnitState* normalsTus = parentMat->getTechnique(0)->getPass(0)->getTextureUnitState("normals");
   if (!normalsTus) {
-    gzerr << "LinkTracksPlugin::InitTexture - normals TextureUnitState is NULL" << endl;
+    if(normalsTusErrors++ < MAX_ERRORS) {
+      gzerr << "LinkTracksPlugin::InitTexture - normals TextureUnitState is NULL" << endl;
+    }
     return false;
   }
   pair< size_t, size_t > size = normalsTus->getTextureDimensions();
   mTexWidth = size.first;
   mTexHeight = size.second;
+  
+  // TODO: for some cases we may want the tracks texture to have more detail than 
+  // the normal map of the terrain. This code is untested, if we want to enable 
+  // it in the future it needs to be checked. 
+  if(false) {
+    // get max texture size
+    GLint glMaxTexSize;
+    glGetIntegerv(GL_MAX_TEXTURE_SIZE, &glMaxTexSize);
+    int maxDim   = std::max(mTexWidth, mTexHeight);
+    double scale = (double)glMaxTexSize/(double)maxDim;
+    mTexWidth    = static_cast<int>(mTexWidth * scale);
+    mTexHeight   = static_cast<int>(mTexHeight * scale);
+    mTrackWidth  = mTrackWidth * scale; 
+  }
 
   // Create a single link track texture for all terrain materials.
   mTexture = TextureManager::getSingleton().createManual("linkTracksTexture",
@@ -177,6 +216,22 @@ bool LinkTracksPlugin::InitTexture()
 
   // Paint it white
   memset(pixels, 255, mTexWidth * mTexHeight);
+  if(false) { // checker board pattern for debugging
+    const int gridSz = 32;
+    for(int r = 0; r < mTexHeight; r++) {
+      for(int c = 0; c < mTexWidth; c++) {
+        int idx = (r*mTexWidth)+c;
+        int rd = r/gridSz;
+        int cd = c/gridSz;
+        if(rd % 2 == 0 && cd % 2 == 0) {
+          pixels[idx] = 255-r%gridSz-c%gridSz;
+        }
+        else if(rd % 2 == 1 && cd % 2 == 1) {
+          pixels[idx] = 255-r%gridSz-c%gridSz;
+        }
+      }
+    }
+  }
 
   // Unlock the pixel buffer
   pixelBuffer->unlock();
@@ -204,8 +259,10 @@ bool LinkTracksPlugin::InitTexture()
       tus->setTexture(mTexture);
     }
     else {
-      gzerr << "LinkTracksPlugin::InitTexture -ERROR- could not get texture \"" << 
-        mTextureName << "\" from terrain shader." << endl;
+      if(textureNameErrors++ < MAX_ERRORS) {
+        gzerr << "LinkTracksPlugin::InitTexture -ERROR- could not get texture \"" << 
+          mTextureName << "\" from terrain shader." << endl;
+      }
       return false; 
     }
   }
@@ -243,9 +300,7 @@ void LinkTracksPlugin::OnUpdate()
   }
 }
 
-//limit number of warnings printed to console if we don't have a compatible robot
-static const int WARN_MAX_ProcessLink = 40;
-static       int warn_cnt_ProcessLink = 0;
+static uint32_t visualErrors = 0;
 
 /**
  * Get current link position and draw into texture
@@ -253,8 +308,10 @@ static       int warn_cnt_ProcessLink = 0;
 void LinkTracksPlugin::ProcessLink(const rendering::VisualPtr& visual, const int linkIndex)
 {
   if(!visual) {
-    if(warn_cnt_ProcessLink++ < WARN_MAX_ProcessLink)
-      gzerr << "LinkTracksPlugin::ProcessLink - visual pointer for link " << linkIndex << " is NULL" << endl;
+    if(visualErrors++ < MAX_ERRORS) {
+      gzerr << "LinkTracksPlugin::ProcessLink - visual pointer for link " 
+            << linkIndex << " (" << mLinkName[linkIndex] << ") is NULL" << endl;
+    }
     return;
   }
 
@@ -303,13 +360,22 @@ bool LinkTracksPlugin::TransformLinkPositionToUV(const Vector3& wsPosition, Vect
     // This can happen if the rover drives off the edge of the terrain
     return false;
   }
-
+  
+  // XXX attempted workaround for Gazebo reporting 16 on TerrainSubdivisionCount()
+  // when there should only be one. 
+  int terrainsCount = 0;
+  TerrainGroup::TerrainIterator it = terrainGroup->getTerrainIterator();
+  while(it.hasMoreElements()) {
+    it.moveNext();
+    terrainsCount++;
+  }
+  
   Vector3 terrainSpacePosition;
   terrain->getTerrainPosition(wsPosition, &terrainSpacePosition);
-  const unsigned int tilecount = sqrt(heightmap->TerrainSubdivisionCount());
+  //const unsigned int tilecount = sqrt(heightmap->TerrainSubdivisionCount());
+  const unsigned int tilecount = sqrt(terrainsCount);
   uv = Vector2((double(xIndex) + terrainSpacePosition.x) / double(tilecount),
     (double((tilecount - 1) - yIndex) + (1.0f - terrainSpacePosition.y)) / double(tilecount));
-
   return true;
 }
 

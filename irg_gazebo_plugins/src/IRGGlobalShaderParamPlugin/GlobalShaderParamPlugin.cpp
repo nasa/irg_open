@@ -70,7 +70,7 @@ void GlobalShaderParamPlugin::Load(rendering::VisualPtr _sensor, sdf::ElementPtr
     }
     else {
       int8_t shaderType = shaderTypeFromString(paramElem->Get<std::string>("type"));
-      if(shaderType >= 0) {
+      if(shaderType >= 0 && shaderType < ShaderParamUpdate::NUM_SHADER_TYPES) {
         std::string paramName = paramElem->Get<std::string>("name");
         // add a paramName entry in the params list map
         m_paramsListMap[shaderType][paramName];
@@ -112,13 +112,16 @@ void GlobalShaderParamPlugin::onShaderParamUpdate(const
   if(paramName.length() == 0) {
     clearCache();
   }
-  else {
+  else if (shaderType >= 0 && shaderType < ShaderParamUpdate::NUM_SHADER_TYPES){
     // if we've never seen this paramName before, clear the cache
     if(m_paramsListMap[shaderType].find(paramName) == m_paramsListMap[shaderType].end()) {
       clearCache();
     }
     m_paramsListMap[shaderType][paramName]; // ensure key exists
     m_paramUpdateMap[shaderType][paramName] = msg->param_value;
+  }
+  else {
+    gzerr << "GlobalShaderParamPlugin::onShaderParamUpdate - unknown shaderType: " << shaderType << std::endl;
   }
   m_hasUpdates = true;
 }
