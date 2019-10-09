@@ -22,21 +22,6 @@ using namespace std;
 using namespace ow;
 
 
-static void
-check_ros_environment()
-{
-  const char *ros_master_uri = getenv("ROS_MASTER_URI");
-
-  if (ros_master_uri == NULL)
-  {
-    cerr << "\nFATAL ERROR [main()]: "
-	 << "ROS_MASTER_URI is not defined in the environment.\n"
-	 << "To set up your local machine as a ROS master:\n\n"
-	 << "setenv ROS_MASTER_URI http://localhost:11311\n" << endl;
-    exit(-1);
-  }
-}
-
 /// Convert a ros::Time into a builtin_interfaces::msg::Time
 inline builtin_interfaces::msg::Time ros_time_to_builtin_time(rclcpp::Time ros_time)
 {
@@ -188,14 +173,14 @@ have_non_ros_paramater_file_option(int argc, char *argv[],
 				   string &run_parameters_filename)
 {
   run_parameters_filename = "";
-  
+
   // Check for non-ROS command line args
   Options options;
   options.Add('f', "run parameters file name.\n", "string", 1);
   int firstArgIndex = HandleOptions(argc, argv, options, 0, "");
   if (!options.GetOptionInfo('f')->IsSet())
     return false;
-  
+
   run_parameters_filename = options.GetOptionInfo('f')->GetValuesString();
   if (!path_exists(run_parameters_filename.c_str()))
   {
@@ -337,11 +322,7 @@ read_ros_run_parameters(rclcpp::Node::SharedPtr nodeHandle, string &reference_bo
 
 int
 main(int argc, char *argv[])
-{
-  // Check for required environment variable and gracefully exit if
-  // unset
-  check_ros_environment();
-  
+{ 
   // ROS initialization
   rclcpp::init(argc, argv);
   rclcpp::Node::SharedPtr nodeHandle = rclcpp::Node::make_shared("ephemeris_publisher_node");

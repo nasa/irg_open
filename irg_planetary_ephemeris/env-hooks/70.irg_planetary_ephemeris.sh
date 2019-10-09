@@ -1,2 +1,1 @@
-export GAZEBO_MODEL_PATH="$(catkin_find --first-only irg_planetary_ephemeris models):${GAZEBO_MODEL_PATH}"
-
+export GAZEBO_MODEL_PATH="$(colcon list | grep irg_planetary_ephemeris | cut -f 2)/models:${GAZEBO_MODEL_PATH}"

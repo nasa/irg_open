@@ -70,7 +70,7 @@ void GlobalShaderParamPlugin::Load(rendering::VisualPtr _sensor, sdf::ElementPtr
     }
     else {
       int8_t shaderType = shaderTypeFromString(paramElem->Get<std::string>("type"));
-      if(shaderType >= 0 && shaderType < ShaderParamUpdate::NUM_SHADER_TYPES) {
+      if(shaderType >= 0 && shaderType < msg::ShaderParamUpdate::NUM_SHADER_TYPES) {
         std::string paramName = paramElem->Get<std::string>("name");
         // add a paramName entry in the params list map
         m_paramsListMap[shaderType][paramName];
@@ -104,7 +104,7 @@ void GlobalShaderParamPlugin::Load(rendering::VisualPtr _sensor, sdf::ElementPtr
  * 
  */
 void GlobalShaderParamPlugin::onShaderParamUpdate(const
-      irg_gazebo_plugins::msg::ShaderParamUpdate::SharedPtr msg)
+      msg::ShaderParamUpdate::SharedPtr msg)
 {
   Lock guard(m_mutex);
   const std::string& paramName = msg->param_name;
@@ -112,7 +112,7 @@ void GlobalShaderParamPlugin::onShaderParamUpdate(const
   if(paramName.length() == 0) {
     clearCache();
   }
-  else if (shaderType >= 0 && shaderType < ShaderParamUpdate::NUM_SHADER_TYPES){
+  else if (shaderType >= 0 && shaderType < msg::ShaderParamUpdate::NUM_SHADER_TYPES){
     // if we've never seen this paramName before, clear the cache
     if(m_paramsListMap[shaderType].find(paramName) == m_paramsListMap[shaderType].end()) {
       clearCache();

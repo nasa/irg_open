@@ -14,9 +14,12 @@ using namespace gazebo;
 GZ_REGISTER_MODEL_PLUGIN(CelestialBodyPlugin)
 
 CelestialBodyPlugin::CelestialBodyPlugin() :
-  ModelPlugin(),
-  m_transformListener(m_tfBuffer)
+  ModelPlugin()
 {
+  rclcpp::Clock::SharedPtr clock = std::make_shared<rclcpp::Clock>(RCL_SYSTEM_TIME);
+  m_tfBuffer.reset(new tf2_ros::Buffer(clock));
+  m_transformListener.reset(new tf2_ros::TransformListener(*m_tfBuffer));
+
   m_timer.Start();
 }
 
@@ -68,18 +71,18 @@ void CelestialBodyPlugin::OnUpdate()
   m_timer.Start();
 
   // Get most recent transform
-  geometry_msgs::TransformStamped sXform;
+  geometry_msgs::msg::TransformStamped sXform;
   try
   {
-    sXform = m_tfBuffer.lookupTransform("celestial_body_origin", m_frame, ros::Time(0));
+    sXform = m_tfBuffer->lookupTransform("celestial_body_origin", m_frame, tf2::TimePointZero);
   }
   catch (tf2::TransformException& ex)
   {
-    ROS_ERROR("CelestialBodyPlugin::OnUpdate - %s", ex.what());
+    gzerr << "CelestialBodyPlugin::OnUpdate - " << ex.what() << endl;
     return;
   }
 
-  geometry_msgs::Vector3& v = sXform.transform.translation;
+  geometry_msgs::msg::Vector3& v = sXform.transform.translation;
   if (v.x == 0.0 && v.y == 0.0 && v.z == 0.0)
   {
     gzerr << "CelestialBodyPlugin: tf offset from celestial_body_origin to "
@@ -107,7 +110,7 @@ void CelestialBodyPlugin::OnUpdate()
   {
     // Otherwise, set the rotation as expected, so any texture map on the body
     // will be properly oriented.
-    geometry_msgs::Quaternion& rot = sXform.transform.rotation;
+    geometry_msgs::msg::Quaternion& rot = sXform.transform.rotation;
     ignition::math::Quaterniond quat(rot.w, rot.x, rot.y, rot.z);
     m_model->SetWorldPose(ignition::math::Pose3d(pos, quat));
   }

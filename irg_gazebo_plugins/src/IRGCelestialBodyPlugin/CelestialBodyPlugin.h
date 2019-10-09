@@ -37,8 +37,8 @@ namespace irg {
 
     gazebo::common::Timer m_timer;
 
-    tf2_ros::Buffer m_tfBuffer;
-    tf2_ros::TransformListener m_transformListener;
+    std::shared_ptr<tf2_ros::Buffer> m_tfBuffer;
+    std::shared_ptr<tf2_ros::TransformListener> m_transformListener;
   };
 }
 
