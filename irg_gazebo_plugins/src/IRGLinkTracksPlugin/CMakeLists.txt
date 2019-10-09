@@ -1,3 +1,5 @@
+set(TARGET_NAME IRGLinkTracksPlugin)
+
 set (HEADERS
   LinkTracksPlugin.h
 )
@@ -14,10 +16,10 @@ include_directories(
   ${std_msgs_INCLUDE_DIRS}
 )
 
-add_library(link_tracks_plugin SHARED 
+add_library(${TARGET_NAME} SHARED 
   ${HEADERS}
   ${SOURCES}
 )
 
-target_link_libraries(link_tracks_plugin ${GAZEBO_libraries} ${roscpp_LIBRARIES})
-set_target_properties(link_tracks_plugin PROPERTIES COMPILE_FLAGS "${GAZEBO_CXX_FLAGS}")
+target_link_libraries(${TARGET_NAME} ${GAZEBO_libraries} ${roscpp_LIBRARIES})
+set_target_properties(${TARGET_NAME} PROPERTIES COMPILE_FLAGS "${GAZEBO_CXX_FLAGS}")
