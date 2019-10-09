@@ -16,7 +16,6 @@
 #include <geometry_msgs/msg/transform_stamped.hpp>
 
 #include "ephemeris.h"
-#include "handle-options.h"
 
 using namespace std;
 using namespace ow;
@@ -134,63 +133,6 @@ broadcast_transforms(tf2_ros::TransformBroadcaster& broadcaster,
   }
 }
 
-static int
-path_exists(const char *path)
-{
-  struct stat path_status;
-
-  return (stat(path, &path_status) == 0);
-}
-
-// Deprecated
-bool
-have_run_parameters_file(int argc, char *argv[], rclcpp::Node::SharedPtr nodeHandle,
-			 string &run_parameters_filename)
-{
-  run_parameters_filename = "run_parameters.yaml";
-    
-  // Check for run parameter file arg passed via rosrun or roslaunch:
-  if (!nodeHandle->get_parameter("run_parameters_file", run_parameters_filename))
-  {
-    // Check for non-ROS command line args
-    Options options;
-    options.Add('f', "run parameters file name.\n", "string", 1);
-    int firstArgIndex = HandleOptions(argc, argv, options, 0, "");
-    if (options.GetOptionInfo('f')->IsSet())
-      run_parameters_filename = options.GetOptionInfo('f')->GetValuesString();
-  }
-  if (!path_exists(run_parameters_filename.c_str()))
-  {
-    run_parameters_filename = "";
-    return false;
-  }
-
-  return true;
-}
-
-bool
-have_non_ros_paramater_file_option(int argc, char *argv[],
-				   string &run_parameters_filename)
-{
-  run_parameters_filename = "";
-
-  // Check for non-ROS command line args
-  Options options;
-  options.Add('f', "run parameters file name.\n", "string", 1);
-  int firstArgIndex = HandleOptions(argc, argv, options, 0, "");
-  if (!options.GetOptionInfo('f')->IsSet())
-    return false;
-
-  run_parameters_filename = options.GetOptionInfo('f')->GetValuesString();
-  if (!path_exists(run_parameters_filename.c_str()))
-  {
-    run_parameters_filename = "";
-    return false;
-  }
-
-  return true;
-}
-
 void
 set_default_run_parameters(string &reference_body,
 			   vector<string> &target_bodies,
@@ -211,69 +153,6 @@ set_default_run_parameters(string &reference_body,
   leapSecondKernelPath = "./latest_leapseconds.tls";
   constantsKernelPath =  "./pck00010.tpc";
   ephemerisPaths = { "./de430.bsp" };
-}
-
-bool
-read_run_parameters(const string &run_parameters_filename, string &reference_body,
-		    vector<string> &target_bodies,
-		    float64_ow &mission_lat, float64_ow &mission_lon,
-		    float64_ow &mission_elev, bool &z_down_surface_frame,
-		    string &leapSecondKernelPath, string &constantsKernelPath, 
-		    vector<string> &ephemerisPaths)
-{
-  
-  YAML::Node parameters = YAML::LoadFile(run_parameters_filename);
-  if (parameters["reference_body"])
-    reference_body = parameters["reference_body"].as<string>();
-  else
-    return false;
-  if (parameters["target_bodies"])
-  {
-    YAML::Node target_bodies_node = parameters["target_bodies"];
-    for (std::size_t i = 0; i < target_bodies_node.size(); i++) 
-      target_bodies.push_back(target_bodies_node[i].as<string>());
-  }  
-  else
-    return false;
-  if (parameters["mission_lat"])
-    mission_lat = parameters["mission_lat"].as<double>();
-  else
-    return false;
-  if (parameters["mission_lon"])
-    mission_lon = parameters["mission_lon"].as<double>();
-  else
-    return false;
-  mission_elev = 0.0;
-  if (parameters["mission_elev"])
-    mission_elev = parameters["mission_elev"].as<double>();
-  else
-    cerr << "WARNING [read_run_parameters()]: "
-	 << "no mission elevation specified, assuming elevation = 0" << endl;
-  z_down_surface_frame = true;
-  if (parameters["z_down_surface_frame"])
-    mission_elev = parameters["z_down_surface_frame"].as<bool>();
-  else
-    cerr << "WARNING [read_run_parameters()]: "
-	 << "surface frame Z axis direction not specified, assuming Z down."
-	 << endl;
-  if (parameters["leap_second_kernel"])
-    leapSecondKernelPath = parameters["leap_second_kernel"].as<string>();
-  else
-    return false;
-  if (parameters["constants_kernel"])
-    constantsKernelPath = parameters["constants_kernel"].as<string>();
-  else
-    return false;
-  if (parameters["ephemerides"])
-  {
-    YAML::Node ephemerides_node = parameters["ephemerides"];
-    for (std::size_t i = 0; i < ephemerides_node.size(); i++) 
-      ephemerisPaths.push_back(ephemerides_node[i].as<string>());
-  }
-  else
-    return false;
-
-  return true;
 }
 
 bool
@@ -353,32 +232,15 @@ main(int argc, char *argv[])
 			     z_down_surface_frame,
 			     leapSecondKernelPath, constantsKernelPath, 
 			     ephemerisPaths);
-  if (have_non_ros_paramater_file_option(argc, argv, run_parameters_filename))
+  if (!read_ros_run_parameters(nodeHandle, reference_body, target_bodies,
+       mission_lat, mission_lon, mission_elev,
+       z_down_surface_frame,
+       leapSecondKernelPath, constantsKernelPath,
+       ephemerisPaths))
   {
-    if (!read_run_parameters(run_parameters_filename,
-			     reference_body, target_bodies,
-			     mission_lat, mission_lon, mission_elev,
-			     z_down_surface_frame,
-			     leapSecondKernelPath, constantsKernelPath, 
-			     ephemerisPaths))
-    {
-      cerr << "FATAL ERROR [main()]: "
-	   << "unable to read run time parameters file. Exiting." << endl;
-      exit(-1);
-    }
-  }
-  else
-  {
-    if (!read_ros_run_parameters(nodeHandle, reference_body, target_bodies,
-				 mission_lat, mission_lon, mission_elev,
-				 z_down_surface_frame,
-				 leapSecondKernelPath, constantsKernelPath, 
-				 ephemerisPaths))
-    {
-      cerr << "FATAL ERROR [main()]: "
-	   << "unable to read all ROS run time parameters. Exiting." << endl;
-      exit(-1);
-    }
+    cerr << "FATAL ERROR [main()]: "
+    << "unable to read all ROS run time parameters. Exiting." << endl;
+    exit(-1);
   }
   
   Ephemeris ephemeris(leapSecondKernelPath, constantsKernelPath, ephemerisPaths, z_down_surface_frame);

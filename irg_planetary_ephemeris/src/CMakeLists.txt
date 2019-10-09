@@ -6,7 +6,7 @@ include_directories(
   ${YAMLCPP_INCLUDE_DIRS}
 )
 
-add_executable(${TARGET_NAME} ephemeris_publisher_node.cpp ephemeris.cpp handle-options.cpp)
+add_executable(${TARGET_NAME} ephemeris_publisher_node.cpp ephemeris.cpp)
 
 target_link_libraries(${TARGET_NAME}
   ${rclcpp_LIBRARIES}
