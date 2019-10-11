@@ -32,3 +32,4 @@ rosidl_target_interfaces(${TARGET_NAME} ${PROJECT_NAME} "rosidl_typesupport_cpp"
 install(TARGETS ${TARGET_NAME}
   LIBRARY DESTINATION lib
 )
+

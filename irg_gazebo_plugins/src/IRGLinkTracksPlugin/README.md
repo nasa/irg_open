@@ -11,7 +11,7 @@ write to.
   .
   .
   .
-  <plugin name="link_tracks" filename="liblink_tracks_plugin.so">
+  <plugin name="link_tracks" filename="libIRGLinkTracksPlugin.so">
     <link_name_0>mobile_base::front_left_wheel_link</link_name_0>
     <link_name_1>mobile_base::rear_left_wheel_link</link_name_1>
     <link_name_2>mobile_base::front_right_wheel_link</link_name_2>
