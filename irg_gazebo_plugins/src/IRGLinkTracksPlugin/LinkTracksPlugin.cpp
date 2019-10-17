@@ -5,12 +5,16 @@
  ******************************************************************************/
 #include "LinkTracksPlugin.h"
 
+#include <algorithm>
+
 #include <gazebo/rendering/RenderingIface.hh>
 #include <gazebo/rendering/Scene.hh>
 #include <gazebo/rendering/Heightmap.hh>
 #include <gazebo/common/Image.hh>
 
 #include <OGRE/Terrain/OgreTerrainGroup.h>
+
+#include <geometry_msgs/Vector3Stamped.h>
 
 #include <GL/gl.h> 
 
@@ -61,9 +65,11 @@ LinkTracksPlugin::~LinkTracksPlugin()
  */
 void LinkTracksPlugin::Load(rendering::VisualPtr _sensor, sdf::ElementPtr _sdf)
 {
+  char buf[128];
+  std::string param;
+
   //-- specify link names
   for(int i = 0; i < 16; i++) {
-    char buf[128];
     snprintf(buf, 128, "link_name_%d", i);
     if(_sdf->HasElement(buf)) {
       mLinkName.push_back(_sdf->Get<std::string>(buf));
@@ -80,13 +86,15 @@ void LinkTracksPlugin::Load(rendering::VisualPtr _sensor, sdf::ElementPtr _sdf)
   gzlog << "LinkTracksPlugin::Load - " << mLinkName.size() << " links were specified." << endl;
   
   //-- texture name in terrain shader 
-  if (_sdf->HasElement("texture_name")) {
-    mTextureName = _sdf->Get<string>("texture_name");
+  param = "texture_name";
+  if (_sdf->HasElement(param)) {
+    mTextureName = _sdf->Get<string>(param);
   }
   
   //-- initial image load
-  if (_sdf->HasElement("load_image")) {
-    mLoadImage = _sdf->Get<string>("load_image");
+  param = "load_image";
+  if (_sdf->HasElement(param)) {
+    mLoadImage = _sdf->Get<string>(param);
   }
   // if parameter exists on ROS param server, use that instead
   const char* param_name = "/gazebo/plugins/link_tracks/load_image";
@@ -95,33 +103,63 @@ void LinkTracksPlugin::Load(rendering::VisualPtr _sensor, sdf::ElementPtr _sdf)
   }
   
   //-- track width
-  if (_sdf->HasElement("track_width")) {
-    mTrackWidth = _sdf->Get<double>("track_width");
+  param = "track_width";
+  if (_sdf->HasElement(param)) {
+    mTrackWidth = _sdf->Get<double>(param);
     mTrackWidth = max(mTrackWidth, 0.0);
   }
 
   //-- track depth
-  if (_sdf->HasElement("track_depth")) {
-    mTrackDepth = _sdf->Get<double>("track_depth");
-    mTrackDepth = max(mTrackDepth, 0.0);
-    mTrackDepth = min(mTrackDepth, 1.0);
+  param = "track_depth";
+  if (_sdf->HasElement(param)) {
+    mTrackDepth = _sdf->Get<double>(param);
+    mTrackDepth = std::max(mTrackDepth, 0.0);
+    mTrackDepth = std::min(mTrackDepth, 1.0);
   }
 
   //-- track exponent
-  if (_sdf->HasElement("track_exponent")) {
-    mTrackExp = _sdf->Get<double>("track_exponent");
-    mTrackExp = max(mTrackExp, 0.0);
+  param = "track_exponent";
+  if (_sdf->HasElement(param)) {
+    mTrackExp = _sdf->Get<double>(param);
+    mTrackExp = std::max(mTrackExp, 0.0);
   }
   
   //-- min distance threshold
-  if (_sdf->HasElement("min_dist_thresh")) {
-    mMinDistThresh = _sdf->Get<double>("min_dist_thresh");
-    mMinDistThresh = max(mMinDistThresh, 0.001);
+  param = "min_dist_thresh";
+  if (_sdf->HasElement(param)) {
+    mMinDistThresh = _sdf->Get<double>(param);
+    mMinDistThresh = std::max(mMinDistThresh, 0.001);
   }
   
   //-- initial draw state
-  if (_sdf->HasElement("draw_enabled")) {
-    mDrawEnabled = _sdf->Get<bool>("draw_enabled");
+  param = "draw_enabled";
+  if (_sdf->HasElement(param)) {
+    mDrawEnabled = _sdf->Get<bool>(param);
+  }
+  
+  //-- altitude enable
+  param = "altitude_tracking_enabled";
+  if (_sdf->HasElement(param)) {
+    double defaultThreshold = 999.9;
+    param = "altitude_threshold";
+    if (_sdf->HasElement(param)) {
+      defaultThreshold = _sdf->Get<double>(param);
+    }
+    int i = 0;
+    for(auto& name : mLinkName) {
+      // replace all `:` in link name with `_`
+      std::string topicLeaf = name;
+      std::replace(topicLeaf.begin(), topicLeaf.end(), ':', '_');
+      std::string topicName = "/gazebo/plugins/link_tracks/altitude/"+topicLeaf;
+      mAltitudePublisher.push_back(mNodeHandle->advertise<geometry_msgs::Vector3Stamped>(topicName, 1));
+      double threshold = defaultThreshold;
+      snprintf(buf, 128, "altitude_threshold_%d", i);
+      if (_sdf->HasElement(buf)) {
+        threshold = _sdf->Get<double>(buf);
+      }
+      mAltitudeThreshold.push_back(threshold);
+      i++;
+    }
   }
   
   //== subscribe to ROS messages ==============
@@ -145,6 +183,7 @@ static uint32_t heightmapErrors   = 0;
 static uint32_t materialErrors    = 0;
 static uint32_t normalsTusErrors  = 0;
 static uint32_t textureNameErrors = 0;
+static uint32_t visualErrors      = 0;
 
 /**
  * Create texture to draw into 
@@ -279,6 +318,11 @@ bool LinkTracksPlugin::InitTexture()
 
 /**
  * frame callback
+ * NOTE: it appears that the PreRender Gazebo event is *not* called before
+ * a render event, but instead called at the physics update rate (i.e. 
+ * usually around 1000Hz). This is not a problem as long as the distance
+ * threshold is set to a reasonable value but something we should keep 
+ * an eye on (in this and other plugins).
  */
 void LinkTracksPlugin::OnUpdate()
 {
@@ -289,16 +333,21 @@ void LinkTracksPlugin::OnUpdate()
 
   rendering::ScenePtr scene = rendering::get_scene();
   if (!scene) {
-    gzerr << "LinkTracksPlugin::OnUpdate - scene pointer is NULL" << endl;
+    if(sceneErrors++ < MAX_ERRORS) {
+      gzerr << "LinkTracksPlugin::OnUpdate - scene pointer is NULL" << endl;
+    }
+    return;
+  }
+  rendering::Heightmap* heightmap = scene->GetHeightmap();
+  if (!heightmap) {
+    if(heightmapErrors++ < MAX_ERRORS) {
+      gzerr << "LinkTracksPlugin::OnUpdate - heightmap pointer is NULL" << endl;
+    }
     return;
   }
 
-  if(mDrawEnabled) {
-    for(int i = 0; i < mLinkName.size(); i++) {
-      if(mLinkEnabled[i]) {
-        ProcessLink(scene->GetVisual(mLinkName[i]), i);
-      }
-    }
+  for(int i = 0; i < mLinkName.size(); i++) {
+    ProcessLink(scene->GetVisual(mLinkName[i]), i, heightmap);
   }
 
   if (!mSaveImage.empty()) {
@@ -307,12 +356,12 @@ void LinkTracksPlugin::OnUpdate()
   }
 }
 
-static uint32_t visualErrors = 0;
-
 /**
  * Get current link position and draw into texture
  */
-void LinkTracksPlugin::ProcessLink(const rendering::VisualPtr& visual, const int linkIndex)
+void LinkTracksPlugin::ProcessLink(const rendering::VisualPtr& visual, 
+                                   const int linkIndex, 
+                                   const rendering::Heightmap* heightmap)
 {
   if(!visual) {
     if(visualErrors++ < MAX_ERRORS) {
@@ -323,16 +372,32 @@ void LinkTracksPlugin::ProcessLink(const rendering::VisualPtr& visual, const int
   }
 
   ignition::math::Pose3d pose = visual->WorldPose();
+  
+  // check altitude
+  if(mAltitudePublisher.size() > linkIndex) {
+    double altitude;
+    geometry_msgs::Vector3Stamped msg;
+    msg.header.stamp = ros::Time::now();
+    msg.vector.x = pose.Pos().X();
+    msg.vector.y = pose.Pos().Y();
+    // Gazebo Heightmap does not provide accessors for extents. If x,y is outside
+    // the bounds of the Heightmap, the Height() call returns 0
+    msg.vector.z = altitude = pose.Pos().Z() - heightmap->Height(msg.vector.x, msg.vector.y);
+    mAltitudePublisher[linkIndex].publish(msg);
+    mLinkEnabled[linkIndex] = (altitude < mAltitudeThreshold[linkIndex]) ? true : false;
+  }
 
-  // If link has moved beyond a certain threshold, draw an indentation in terrain.
-  // only populate X and Y, we don't care about movement in Z
-  Vector3 position(pose.Pos().X(), pose.Pos().Y(), 0.0);
-  Vector3 diff = position - mLinkPos[linkIndex];
-  if (diff.length() >= mMinDistThresh) {
-    mLinkPos[linkIndex] = position;
-    Vector2 uv;
-    if (TransformLinkPositionToUV(position, uv)) {
-      Draw(uv);
+  if(mDrawEnabled && mLinkEnabled[linkIndex]) {
+    // If link has moved beyond a certain threshold, draw an indentation in terrain.
+    // only populate X and Y, we don't care about movement in Z
+    Vector3 position(pose.Pos().X(), pose.Pos().Y(), 0.0);
+    Vector3 diff = position - mLinkPos[linkIndex];
+    if (diff.length() >= mMinDistThresh) {
+      mLinkPos[linkIndex] = position;
+      Vector2 uv;
+      if (TransformLinkPositionToUV(position, uv, heightmap)) {
+        Draw(uv);
+      }
     }
   }
 }
@@ -340,20 +405,10 @@ void LinkTracksPlugin::ProcessLink(const rendering::VisualPtr& visual, const int
 /**
  * map from X,Y world space into UV
  */
-bool LinkTracksPlugin::TransformLinkPositionToUV(const Vector3& wsPosition, Vector2& uv)
+bool LinkTracksPlugin::TransformLinkPositionToUV(const Vector3& wsPosition, 
+                                                 Vector2& uv,
+                                                 const rendering::Heightmap* heightmap)
 {
-  rendering::ScenePtr scene = rendering::get_scene();
-  if (!scene) {
-    gzerr << "LinkTracksPlugin::Draw - scene pointer is NULL" << endl;
-    return false;
-  }
-
-  rendering::Heightmap* heightmap = scene->GetHeightmap();
-  if (!heightmap) {
-    gzerr << "LinkTracksPlugin::Draw - heightmap pointer is NULL" << endl;
-    return false;
-  }
-
   TerrainGroup* terrainGroup = heightmap->OgreTerrain();
   if (!terrainGroup) {
     gzerr << "LinkTracksPlugin::Draw - terrainGroup pointer is NULL" << endl;
@@ -368,7 +423,7 @@ bool LinkTracksPlugin::TransformLinkPositionToUV(const Vector3& wsPosition, Vect
     return false;
   }
   
-  // XXX attempted workaround for Gazebo reporting 16 on TerrainSubdivisionCount()
+  // Workaround for Gazebo reporting 16 on TerrainSubdivisionCount()
   // when there should only be one. 
   int terrainsCount = 0;
   TerrainGroup::TerrainIterator it = terrainGroup->getTerrainIterator();
