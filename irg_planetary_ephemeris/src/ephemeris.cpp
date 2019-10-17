@@ -8,6 +8,8 @@
 #include "SpiceZfc.h"
 
 
+#include <assert.h>
+
 using namespace ow;
 using namespace std;
 
@@ -255,6 +257,11 @@ void Ephemeris::SurfaceToTargetBodyTransform(const string& referenceBody,
   transform[13] = 0.0;
   transform[14] = 0.0;
   transform[15] = 1.0;
+
+  // Store vector to body for computation of sun occultation
+  m_bodyVecMap[targetBody][0] = transform[3];
+  m_bodyVecMap[targetBody][1] = transform[7];
+  m_bodyVecMap[targetBody][2] = transform[11];
 }
 
 void Ephemeris::VectorToTarget(const string& referenceBody,
@@ -405,4 +412,72 @@ void Ephemeris::PlanetoGraphicToCentric(const string& planetaryBody,
 	   << planetaryBody << ". Longitude conversion skipped."
 	   << endl;
   }
+}
+
+double Ephemeris::FractionVisible(const string& referenceBody,
+                                  const string& occulterBody)
+{
+  // Get radius of reference body
+  const SpiceInt max_radii_dim = 3;
+  SpiceInt dim;
+  SpiceDouble radii[max_radii_dim];
+  bodvrd_c(referenceBody.c_str(), "RADII", max_radii_dim, &dim, radii);
+  double ref_radius = 0.0;
+  for (int i=0; i<dim; i++) {
+    ref_radius += radii[i];
+  }
+  ref_radius /= double(dim);
+
+  // Get radius of occulter
+  bodvrd_c(occulterBody.c_str(), "RADII", max_radii_dim, &dim, radii);
+  double occ_radius = 0.0;
+  for (int i=0; i<dim; i++) {
+    occ_radius += radii[i];
+  }
+  occ_radius /= double(dim);
+
+  // These vectors should have been computed already
+  assert(m_bodyVecMap.find(referenceBody) != m_bodyVecMap.end());
+  assert(m_bodyVecMap.find(occulterBody) != m_bodyVecMap.end());
+
+  // Make radii relative from the point of view of the observer, and
+  // normalize vectors to the bodies
+  Vec3& ref_vec = m_bodyVecMap[referenceBody];
+  ref_radius /= ref_vec.normalize();
+  Vec3& occ_vec = m_bodyVecMap[occulterBody];
+  occ_radius /= occ_vec.normalize();
+
+  // Separation between circles can be defined as the angle between vectors
+  // that point to them
+  const double d = acos(ref_vec[0] * occ_vec[0] + ref_vec[1] * occ_vec[1] + ref_vec[2] * occ_vec[2]);
+
+  // No occultation
+  if (d >= ref_radius + occ_radius)
+    return 1.0;
+
+  // Full occultation
+  if (occ_radius >= ref_radius && d <= occ_radius - ref_radius )
+    return 0.0;
+
+  // Maximum occultation possible when occulter is apparently smaller than ref body
+  const double ref_area = M_PI * ref_radius * ref_radius;
+  if (ref_radius >= occ_radius && d <= ref_radius - occ_radius)
+  {
+    const double occ_area = M_PI * occ_radius * occ_radius;
+    return (ref_area - occ_area) / ref_area;
+  }
+
+  // Solution for intersection area of two circles taken from:
+  // https://stackoverflow.com/questions/4247889/area-of-intersection-between-two-circles
+  double r = ref_radius;
+  double R = occ_radius;
+  if(R < r){
+    r = occ_radius;
+    R = ref_radius;
+  }
+  double intersection_area = (r * r * acos((d * d + r * r - R * R) / (2.0 * d * r))) +
+                             (R * R * acos((d * d + R * R - r * r) / (2.0 * d * R))) -
+                             (0.5 * sqrt((-d + r + R) * (d + r - R) * (d - r + R) * (d + r + R)));
+
+  return (ref_area - intersection_area) / ref_area;
 }

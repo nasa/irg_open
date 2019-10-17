@@ -8,14 +8,19 @@
 
 #include <gazebo/common/Plugin.hh>
 #include <gazebo_ros/node.hpp>
-#include "rclcpp/rclcpp.hpp"
-#include "std_msgs/msg/string.hpp"
-#include "std_msgs/msg/bool.hpp"
-#include "std_msgs/msg/u_int8_multi_array.hpp"
+#include <rclcpp/rclcpp.hpp>
+#include <std_msgs/msg/string.hpp>
+#include <std_msgs/msg/bool.hpp>
+#include <std_msgs/msg/u_int8_multi_array.hpp>
+#include <geometry_msgs/msg/vector3_stamped.hpp>
 #include <OGRE/OgreVector3.h>
 #include <OGRE/OgreTexture.h>
 
 namespace gazebo {
+  
+  namespace rendering {
+    class Heightmap;
+  }
 
   class LinkTracksPlugin : public VisualPlugin
   {
@@ -29,11 +34,15 @@ namespace gazebo {
 
     void OnUpdate();
 
-    void ProcessLink(const rendering::VisualPtr& visual, const int linkIndex);
+    void ProcessLink(const rendering::VisualPtr& visual, 
+                     const int linkIndex,
+                     const rendering::Heightmap* heightmap);
 
     // Pass link position in world space, get position in texture space
     // Returns true if position is within texture.
-    bool TransformLinkPositionToUV(const Ogre::Vector3& wsPosition, Ogre::Vector2& uv);
+    bool TransformLinkPositionToUV(const Ogre::Vector3& wsPosition, 
+                                   Ogre::Vector2& uv, 
+                                   const rendering::Heightmap* heightmap);
 
     void Draw(const Ogre::Vector2& uv);
 
@@ -50,7 +59,7 @@ namespace gazebo {
   private:
     // Connection to the update event
     event::ConnectionPtr mUpdateConnection;
-
+    
     int mTexWidth;
     int mTexHeight;
 
@@ -59,10 +68,14 @@ namespace gazebo {
 
     std::vector<std::string>    mLinkName;
     std::vector<Ogre::Vector3>  mLinkPos;
-    std::vector<uint8_t>        mLinkEnabled; //< disable draw of individual link
+    std::vector<uint8_t>        mLinkEnabled; //< enable/disable draw of individual link
     
-    bool   mDrawEnabled; //< disable all drawing 
+    bool                        mDrawEnabled; //< enable/disable all drawing 
+    bool                        mAltitudeEnabled; //< enable/disable tracking of altitude above terrain
     
+    std::vector<rclcpp::Publisher<geometry_msgs::msg::Vector3Stamped>::SharedPtr> mAltitudePublisher;
+    std::vector<double>         mAltitudeThreshold;
+
     double mMinDistThresh;
     double mTrackWidth;
     double mTrackDepth;

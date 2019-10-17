@@ -7,8 +7,9 @@
 
 #include <yaml-cpp/yaml.h>
 
-#include "rclcpp/rclcpp.hpp"
+#include <rclcpp/rclcpp.hpp>
 #include <std_msgs/msg/string.hpp>
+#include <std_msgs/msg/float64.hpp>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Transform.h>
 #include <tf2_ros/transform_broadcaster.h>
@@ -107,6 +108,7 @@ make_time_stamped_transform(const std::string &reference_body,
 
 void
 broadcast_transforms(tf2_ros::TransformBroadcaster& broadcaster,
+         rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr sun_visibility_pub,
 		     const string& reference_body,
 		     const float64_ow lat, const float64_ow lon,
 		     const float64_ow elev,
@@ -115,6 +117,8 @@ broadcast_transforms(tf2_ros::TransformBroadcaster& broadcaster,
 		     Ephemeris &ephemeris)
 {
   string time_string = ros_time_to_string(ros_time);
+
+  int sun_index = -1;
 
   for (int i = 0; i < target_bodies.size(); ++i)
   {
@@ -130,6 +134,41 @@ broadcast_transforms(tf2_ros::TransformBroadcaster& broadcaster,
 
     // Publish the time stamped transforms for this target body
     broadcaster.sendTransform(time_stamped_transform_msg);
+
+    // Is this the sun?
+    std::string lowercase_name = target_bodies[i];
+    std::transform(lowercase_name.begin(), lowercase_name.end(), lowercase_name.begin(),
+        [](unsigned char c){ return std::tolower(c); });
+    if (lowercase_name == "sun")
+    {
+      sun_index = i;
+    }
+  }
+
+  // Compute amount of sun occultation by another body.
+  // This algorithm finds the minimum value output by simple body-to-body
+  // occultation events. It does not handle the extremely unlikely case of
+  // occultation by multiple bodies simultaneously.
+  double fraction_visible = 1.0;
+  if (sun_index >= 0 && target_bodies.size() > 1)
+  {
+    for (int i = 0; i < target_bodies.size(); ++i)
+    {
+      if (i == sun_index)
+      {
+        continue;
+      }
+
+      const double current_fv = ephemeris.FractionVisible(target_bodies[sun_index],
+                                                          target_bodies[i]);
+      if(current_fv < fraction_visible){
+        fraction_visible = current_fv;
+      }
+    }
+
+    std_msgs::msg::Float64 msg;
+    msg.data = fraction_visible;
+    sun_visibility_pub->publish(msg);
   }
 }
 
@@ -156,12 +195,12 @@ set_default_run_parameters(string &reference_body,
 }
 
 bool
-read_ros_run_parameters(rclcpp::Node::SharedPtr nodeHandle, string &reference_body,
-			vector<string> &target_bodies,
-			float64_ow &mission_lat, float64_ow &mission_lon,
-			float64_ow &mission_elev, bool &z_down_surface_frame,
-			string &leapSecondKernelPath, string &constantsKernelPath, 
-			vector<string> &ephemerisPaths)
+read_ros_run_parameters(rclcpp::Node::SharedPtr nodeHandle,
+                        string &reference_body, vector<string> &target_bodies,
+                        float64_ow &mission_lat, float64_ow &mission_lon,
+                        float64_ow &mission_elev, bool &z_down_surface_frame,
+                        string &leapSecondKernelPath, string &constantsKernelPath,
+                        vector<string> &ephemerisPaths)
 {
   if (!nodeHandle->get_parameter("reference_body", reference_body))
     return false;
@@ -206,7 +245,6 @@ main(int argc, char *argv[])
   rclcpp::init(argc, argv);
   rclcpp::Node::SharedPtr nodeHandle = rclcpp::Node::make_shared("ephemeris_publisher_node");
   tf2_ros::TransformBroadcaster broadcaster(nodeHandle);
-  tf2_ros::StaticTransformBroadcaster static_broadcaster(nodeHandle);
   // Set the transform update rate
   RCLCPP_INFO(nodeHandle->get_logger(),
               "Starting ephemeris publisher node!");
@@ -218,6 +256,10 @@ main(int argc, char *argv[])
     publishPeriod = 5; // The default period
   RCLCPP_INFO(nodeHandle->get_logger(),
               "Setting publish period to ", publishPeriod);
+
+  //ros::Publisher sun_visibility_pub = nodeHandle.advertise<std_msgs::Float64>("sun_visibility", 1);
+  rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr sun_visibility_pub =
+      nodeHandle->create_publisher<std_msgs::msg::Float64>("sun_visibility", 1);
 
   string run_parameters_filename;
   string reference_body;
@@ -242,7 +284,7 @@ main(int argc, char *argv[])
     << "unable to read all ROS run time parameters. Exiting." << endl;
     exit(-1);
   }
-  
+
   Ephemeris ephemeris(leapSecondKernelPath, constantsKernelPath, ephemerisPaths, z_down_surface_frame);
   
   // Broadcasting loop
@@ -267,8 +309,8 @@ main(int argc, char *argv[])
     }
     
     builtin_interfaces::msg::Time builtin_time = ros_time_to_builtin_time(current_time);
-    broadcast_transforms(broadcaster, reference_body, mission_lat, mission_lon,
-                         mission_elev,
+    broadcast_transforms(broadcaster, sun_visibility_pub, reference_body,
+                         mission_lat, mission_lon, mission_elev,
                          target_bodies, builtin_time, ephemeris);
     
     publishRate.sleep();
