@@ -1,19 +1,17 @@
-set(TARGET_NAME IRGLinkTracksPlugin)
+set(TARGET_NAME IRGCelestialBodyPlugin)
 
 set (HEADERS
-  LinkTracksPlugin.h
+  CelestialBodyPlugin.h
 )
 
 set (SOURCES
-  LinkTracksPlugin.cpp
+  CelestialBodyPlugin.cpp
 )
 
 include_directories(
   ${catkin_INCLUDE_DIRS}
   ${OGRE_Paging_INCLUDE_DIR}
   ${GAZEBO_INCLUDE_DIRS}
-  ${roscpp_INCLUDE_DIRS}
-  ${std_msgs_INCLUDE_DIRS}
 )
 
 add_library(${TARGET_NAME} SHARED 
@@ -21,5 +19,8 @@ add_library(${TARGET_NAME} SHARED
   ${SOURCES}
 )
 
-target_link_libraries(${TARGET_NAME} ${GAZEBO_libraries} ${roscpp_LIBRARIES})
+target_link_libraries(${TARGET_NAME}
+  ${GAZEBO_libraries}
+  ${catkin_LIBRARIES}
+)
 set_target_properties(${TARGET_NAME} PROPERTIES COMPILE_FLAGS "${GAZEBO_CXX_FLAGS}")

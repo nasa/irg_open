@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+<sdf version='1.6'>
+    
+  <model name="irg_sun">
+    <!-- This pose will be overridden by IRGCelestialBodyPlugin. -->
+    <pose>0 0 0  0 0 0</pose>
+    <static>0</static>
+    <link name='ellipsoid'>
+      <gravity>0</gravity>
+      <visual name="visual">
+        <cast_shadows>false</cast_shadows>
+        <geometry>
+          <sphere>
+            <radius>1</radius>
+          </sphere>
+        </geometry>
+        <material>
+          <script>
+            <uri>model://irg_sun/materials/scripts</uri>
+            <name>irg/sun</name>
+          </script>
+        </material>
+        <!-- A non-standard bitmask to prevent the sun from rendering into the irradiance environment map. -->
+        <!-- The sun renders as a tiny dot, but it's so bright that it can significantly alter irradiance values. -->
+        <plugin name="visibility" filename="libIRGVisibilityPlugin.so">
+          <visibility_bitmask>0x00010000</visibility_bitmask>
+        </plugin>
+      </visual>
+      <light name='sun' type='directional'>
+        <cast_shadows>1</cast_shadows>
+        <direction>1 0 0</direction>
+        <diffuse>1 1 1 1</diffuse>
+        <specular>1 1 1 1</specular>
+      </light>
+    </link>
+    <plugin name="CelestialBody" filename="libIRGCelestialBodyPlugin.so">
+      <frame>sun</frame>
+      <radius>696392000</radius>
+      <render_distance>190000</render_distance>
+      <light_source>true</light_source>
+    </plugin>
+  </model>
+
+</sdf>

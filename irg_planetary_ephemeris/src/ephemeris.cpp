@@ -191,16 +191,24 @@ void Ephemeris::SurfaceToTargetBodyTransform(const string& referenceBody,
   surfnm_c(ref_radii[0], ref_radii[1], ref_radii[2], ref_surf_point,
 	   ref_surf_normal);
 
-  // Compute surface transform matrix - using the normal to the
-  // surface, twovec_c defines a surface frame with X-North, Y-West,
-  // and Z-up. We negate the normal for X-North, Y-East, and Z-down.
+  // Compute surface transform matrix
   if (m_z_down_surface_frame)
   {
+    // For a X-North, Y-East, and Z-down (NED) local-level frame we
+    // negate the normal to the surface, otherwise the twovec_c() call
+    // would produce a Z-up frame.
     ref_surf_normal[0] = -ref_surf_normal[0];
     ref_surf_normal[1] = -ref_surf_normal[1];
     ref_surf_normal[2] = -ref_surf_normal[2];
+    twovec_c(ref_surf_normal, Z_axis_ID, z_axis, X_axis_ID, ref_to_surf_rotation);
   }
-  twovec_c(ref_surf_normal, Z_axis_ID, z_axis, X_axis_ID, ref_to_surf_rotation);
+  else
+  {
+    // For a Z-up frame, we use the surface normal, but modify the
+    // twovec_c() call slightly to produce a X-East, Y-North, and Z-up
+    // (ENU) which is common in GIS work.
+    twovec_c(ref_surf_normal, Z_axis_ID, z_axis, Y_axis_ID, ref_to_surf_rotation);
+  }
 
   // Compute target state in reference body frame with a single call to SPKEZR
   string frameName = "IAU_" + referenceBody;
