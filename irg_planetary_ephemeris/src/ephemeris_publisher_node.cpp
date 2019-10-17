@@ -108,7 +108,7 @@ make_time_stamped_transform(const std::string &reference_body,
 
 void
 broadcast_transforms(tf2_ros::TransformBroadcaster broadcaster,
-         ros::Publisher& sun_occultation_pub,
+         ros::Publisher& sun_visibility_pub,
 		     const string& reference_body,
 		     const float64_ow lat, const float64_ow lon,
 		     const float64_ow elev,
@@ -148,7 +148,7 @@ broadcast_transforms(tf2_ros::TransformBroadcaster broadcaster,
   // Compute amount of sun occultation by another body.
   // This algorithm finds the minimum value output by simple body-to-body
   // occultation events. It does not handle the extremely unlikely case of
-  // occultation my multiple bodies simultaneously.
+  // occultation by multiple bodies simultaneously.
   double fraction_visible = 1.0;
   if (sun_index >= 0 && target_bodies.size() > 1)
   {
@@ -168,7 +168,7 @@ broadcast_transforms(tf2_ros::TransformBroadcaster broadcaster,
 
     std_msgs::Float64 msg;
     msg.data = fraction_visible;
-    sun_occultation_pub.publish(msg);
+    sun_visibility_pub.publish(msg);
   }
 }
 
@@ -377,7 +377,7 @@ main(int argc, char *argv[])
     publishPeriod = 5; // The default period
   ROS_INFO_STREAM("Setting publish period to " << publishPeriod);
 
-  ros::Publisher sun_occultation_pub = nodeHandle.advertise<std_msgs::Float64>("sun_occultation", 1);
+  ros::Publisher sun_visibility_pub = nodeHandle.advertise<std_msgs::Float64>("sun_visibility", 1);
 
   string run_parameters_filename;
   string reference_body;
@@ -441,7 +441,7 @@ main(int argc, char *argv[])
       continue;
     }
 
-    broadcast_transforms(broadcaster, sun_occultation_pub, reference_body,
+    broadcast_transforms(broadcaster, sun_visibility_pub, reference_body,
                          mission_lat, mission_lon, mission_elev,
                          target_bodies, current_time, ephemeris);
     
