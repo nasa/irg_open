@@ -228,10 +228,10 @@ read_ros_run_parameters(rclcpp::Node::SharedPtr nodeHandle,
 
   if (!nodeHandle->get_parameter("leap_second_kernel", leapSecondKernelPath))
     return false;
-  
+
   if (!nodeHandle->get_parameter("constants_kernel", constantsKernelPath))
     return false;
-  
+
   if (!nodeHandle->get_parameter("ephemerides", ephemerisPaths))
     return false;
 
@@ -243,7 +243,10 @@ main(int argc, char *argv[])
 { 
   // ROS initialization
   rclcpp::init(argc, argv);
-  rclcpp::Node::SharedPtr nodeHandle = rclcpp::Node::make_shared("ephemeris_publisher_node");
+  rclcpp::NodeOptions options;
+  // params in YAML file are implicitly declared (like ROS1 behavior)
+  options.automatically_declare_parameters_from_overrides(true);
+  rclcpp::Node::SharedPtr nodeHandle = rclcpp::Node::make_shared("ephemeris_publisher_node", options);
   tf2_ros::TransformBroadcaster broadcaster(nodeHandle);
   // Set the transform update rate
   RCLCPP_INFO(nodeHandle->get_logger(),
@@ -257,7 +260,6 @@ main(int argc, char *argv[])
   RCLCPP_INFO(nodeHandle->get_logger(),
               "Setting publish period to ", publishPeriod);
 
-  //ros::Publisher sun_visibility_pub = nodeHandle.advertise<std_msgs::Float64>("sun_visibility", 1);
   rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr sun_visibility_pub =
       nodeHandle->create_publisher<std_msgs::msg::Float64>("sun_visibility", 1);
 
@@ -312,7 +314,10 @@ main(int argc, char *argv[])
     broadcast_transforms(broadcaster, sun_visibility_pub, reference_body,
                          mission_lat, mission_lon, mission_elev,
                          target_bodies, builtin_time, ephemeris);
-    
+
+    // Make params visible to `ros2 param list`
+    rclcpp::spin_some(nodeHandle);
+
     publishRate.sleep();
   }
   
