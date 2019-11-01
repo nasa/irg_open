@@ -1,9 +1,12 @@
-reference_body: europa
-target_bodies: [sun, jupiter]
-mission_lat: 0.0
-mission_lon: 0.0
-mission_elev: 0.0
-z_down_surface_frame: false
-leap_second_kernel: ./latest_leapseconds.tls
-constants_kernel: ./pck00010.tpc
-ephemerides: [./de430.bsp, ./jup310.bsp]
+ephemeris_publisher_node:
+  ros__parameters:
+    use_sim_time: true
+    reference_body: europa
+    target_bodies: [sun, jupiter]
+    mission_lat: 0.0
+    mission_lon: 0.0
+    mission_elev: 0.0
+    z_down_surface_frame: false
+    leap_second_kernel: ./latest_leapseconds.tls
+    constants_kernel: ./pck00010.tpc
+    ephemerides: [./de430.bsp, ./jup310.bsp]
