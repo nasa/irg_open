@@ -290,7 +290,6 @@ main(int argc, char *argv[])
   Ephemeris ephemeris(leapSecondKernelPath, constantsKernelPath, ephemerisPaths, z_down_surface_frame);
   
   // Broadcasting loop
-  bool first_error = true;
   rclcpp::Rate publishRate(publishPeriod);
   RCLCPP_INFO(nodeHandle->get_logger(),
               "Entering broadcasting loop...");
@@ -298,28 +297,26 @@ main(int argc, char *argv[])
   {
     // Get the current time and make sure it is reasonable.    
     rclcpp::Time current_time = nodeHandle->get_clock()->now();
-    if (current_time.nanoseconds() < 400000000000) // An arbitrary time far from 0! 
+    if (current_time.nanoseconds() < 400000000000) // An arbitrary time far from 0!
     {
-      if (!first_error) // This always happens once in sim so suppress
-			// the first error message.
-        RCLCPP_ERROR(nodeHandle->get_logger(),
-                     "Got low value for ros::Time::now() in the solar frame publisher: ",
-                     current_time);
-      first_error = false;
+      RCLCPP_ERROR_SKIPFIRST(nodeHandle->get_logger(),
+                             "Got low value for ros::Time::now() in the solar frame publisher: ",
+                             current_time);
       sleep(3); // Wait to see if a valid time is published
-      continue;
     }
-    
-    builtin_interfaces::msg::Time builtin_time = ros_time_to_builtin_time(current_time);
-    broadcast_transforms(broadcaster, sun_visibility_pub, reference_body,
-                         mission_lat, mission_lon, mission_elev,
-                         target_bodies, builtin_time, ephemeris);
+    else
+    {
+      builtin_interfaces::msg::Time builtin_time = ros_time_to_builtin_time(current_time);
+      broadcast_transforms(broadcaster, sun_visibility_pub, reference_body,
+                           mission_lat, mission_lon, mission_elev,
+                           target_bodies, builtin_time, ephemeris);
+    }
 
-    // Make params visible to `ros2 param list`
+    // Make params visible to `ros2 param list` and update the clock
     rclcpp::spin_some(nodeHandle);
 
     publishRate.sleep();
   }
-  
+
   RCLCPP_INFO(nodeHandle->get_logger(), "Program stopped.");
 }
