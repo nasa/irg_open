@@ -1,4 +1,1 @@
-#export GAZEBO_RESOURCE_PATH="$(catkin_find --first-only irg_gazebo_plugins materials/scripts):${GAZEBO_RESOURCE_PATH}"
-
-export GAZEBO_RESOURCE_PATH="$(colcon list | grep irg_gazebo_plugins | cut -f 2)materials/scripts:${GAZEBO_RESOURCE_PATH}"
-
+export GAZEBO_RESOURCE_PATH="$(colcon list | grep irg_gazebo_plugins | cut -f 2)/materials/scripts:${GAZEBO_RESOURCE_PATH}"
