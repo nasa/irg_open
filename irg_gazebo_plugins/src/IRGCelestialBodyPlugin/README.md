@@ -59,10 +59,10 @@ model, such as `irg_planetary_ephemeris`, and must be defined relative to
 `celestial_body_origin`. You will probably want something like this in your
 launch file to integrate this frame into your scene:
 ```
-  <node name="site_to_celestial_body_origin" pkg="tf" type="static_transform_publisher"
-    args="0 0 0 0 0 0 site_frame celestial_body_origin 1000" />
-  <node name="celestial_body_origin_to_moon" pkg="tf" type="static_transform_publisher"
-    args="0 0 0 1.570796327 0 0 celestial_body_origin moon 1000" />
+  <node name="site_to_celestial_body_origin" pkg="tf2_ros" exec="static_transform_publisher"
+    args="0 0 0 0 0 0 site_frame celestial_body_origin" />
+  <node name="celestial_body_origin_to_moon" pkg="tf2_ros" exec="static_transform_publisher"
+    args="0 0 0 0 0 0 celestial_body_origin moon" />
 ```
 The "moon" frame in that example would be the reference frame in your
 `irg_planetary_ephemeris` config file.
