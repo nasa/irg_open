@@ -12,7 +12,7 @@ using namespace irg;
 
 CameraCompositorListener::CameraCompositorListener(sdf::ElementPtr sdf)
 {
-  m_node_handle = rclcpp::Node::make_shared("irg_camera_compositor_listener");
+  m_node_handle = gazebo_ros::Node::Get(sdf);
 
   // Get UID for topic from the sdf element
   if (sdf->HasElement("topic_uid")) {
@@ -58,15 +58,13 @@ void CameraCompositorListener::initParam(std::string name, double initial_value)
   // pages and many answers.ros.org discussions, for passing extra variables to
   // subscriber callbacks. This allows us to have one callback instead of one
   // for each param (shader uniform) we want to set.
-  // The main gotchas are a) you must use boost::function, not std::function or
-  // auto, and b) you must pass your topic type as reference (don't forget the
-  // ampersand).
-  // Commented out are examples of how you can also use std::bind or a lambda
-  // to achieve the same result. I'm using boost::bind simply to be consistent
-  // with boost::function.
+  // You had to use boost::function in ROS1, but you must use std::function in ROS2.
+  // You must pass your topic type as reference (don't forget the ampersand).
+  // Commented out is an example of how you can also use a lambda
+  // to achieve the same result. I'm using std::bind simply to be consistent
+  // with std::function.
   std::function<void (const std_msgs::msg::Float64::SharedPtr msg)> func =
     std::bind(&CameraCompositorListener::onParamUpdate, this, std::placeholders::_1, name);
-    //std::bind(&CameraCompositorListener::onParamUpdate, this, std::placeholders::_1, name);
     //[this, name](const std_msgs::Float64::ConstPtr& msg){ m_param_map[name].m_value = msg->data; };
 
   // Subscribe using our fancy bound function pointer.

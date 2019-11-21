@@ -6,8 +6,8 @@
 #ifndef CameraCompositorListener_h
 #define CameraCompositorListener_h
 
-#include "rclcpp/rclcpp.hpp"
-#include "std_msgs/msg/float64.hpp"
+#include <gazebo_ros/node.hpp>
+#include <std_msgs/msg/float64.hpp>
 #include <gazebo/rendering/ogre_gazebo.h>
 #include <sdf/Element.hh>
 
@@ -36,7 +36,10 @@ private:
   /// \brief Subscriber callback that allows user to set a param
   void onParamUpdate(const std_msgs::msg::Float64::SharedPtr msg, std::string name);
 
-  rclcpp::Node::SharedPtr m_node_handle;
+  // Prefer gazebo_ros::Node over rclcpp::Node because spin() is called by
+  // gazebo_ros so you don't have to. Somebody must call spin or callback
+  // functions will never get called.
+  gazebo_ros::Node::SharedPtr m_node_handle;
 
   std::string m_topic_uid;
 
