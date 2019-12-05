@@ -8,7 +8,6 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   xmlrpcpp
   rostime
-  rosconsole
   roscpp_serialization
   cpp_common
   std_msgs
