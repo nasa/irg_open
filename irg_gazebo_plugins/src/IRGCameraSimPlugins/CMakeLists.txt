@@ -2,7 +2,6 @@ set(TARGET_NAME IRGCameraSim)
 
 include_directories(
   ${catkin_INCLUDE_DIRS}
-  ${OGRE_Paging_INCLUDE_DIR}
   ${GAZEBO_INCLUDE_DIRS}
 )
 
@@ -24,9 +23,9 @@ add_library(${TARGET_NAME}VisualPlugin SHARED
   CameraSimVisualPlugin.cpp
 )
 
-target_link_libraries(${TARGET_NAME}SensorPlugin ${GAZEBO_libraries})
+target_link_libraries(${TARGET_NAME}SensorPlugin ${roscpp_LIBRARIES} ${GAZEBO_LIBRARIES})
 set_target_properties(${TARGET_NAME}SensorPlugin PROPERTIES COMPILE_FLAGS "${GAZEBO_CXX_FLAGS}")
 
-target_link_libraries(${TARGET_NAME}VisualPlugin ${GAZEBO_libraries})
+target_link_libraries(${TARGET_NAME}VisualPlugin ${roscpp_LIBRARIES} ${GAZEBO_LIBRARIES})
 set_target_properties(${TARGET_NAME}VisualPlugin PROPERTIES COMPILE_FLAGS "${GAZEBO_CXX_FLAGS}")
 

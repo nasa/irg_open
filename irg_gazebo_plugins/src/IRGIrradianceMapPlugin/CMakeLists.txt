@@ -14,7 +14,6 @@ find_package(GLEW REQUIRED)
 
 include_directories(
   ${catkin_INCLUDE_DIRS}
-  ${OGRE_Paging_INCLUDE_DIR}
   ${GAZEBO_INCLUDE_DIRS}
   ${roscpp_INCLUDE_DIRS}
   ${std_msgs_INCLUDE_DIRS}
@@ -26,7 +25,7 @@ add_library(${TARGET_NAME} SHARED
 )
 
 target_link_libraries(${TARGET_NAME}
-  ${GAZEBO_libraries}
+  ${GAZEBO_LIBRARIES}
   ${roscpp_LIBRARIES}
   ${GLEW_LIBRARIES}
 )
