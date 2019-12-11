@@ -4,7 +4,6 @@ find_package(gazebo_ros REQUIRED)
 
 include_directories(
   ${rclcpp_INCLUDE_DIRS}
-  ${OGRE_Paging_INCLUDE_DIR}
   ${GAZEBO_INCLUDE_DIRS}
 )
 
@@ -27,11 +26,11 @@ add_library(${TARGET_NAME}VisualPlugin SHARED
 )
 
 ament_target_dependencies(${TARGET_NAME}SensorPlugin "std_msgs" "gazebo_ros")
-target_link_libraries(${TARGET_NAME}SensorPlugin ${GAZEBO_libraries})
+target_link_libraries(${TARGET_NAME}SensorPlugin ${roscpp_LIBRARIES} ${GAZEBO_LIBRARIES})
 set_target_properties(${TARGET_NAME}SensorPlugin PROPERTIES COMPILE_FLAGS "${GAZEBO_CXX_FLAGS}")
 
 ament_target_dependencies(${TARGET_NAME}VisualPlugin "std_msgs" "gazebo_ros")
-target_link_libraries(${TARGET_NAME}VisualPlugin ${GAZEBO_libraries})
+target_link_libraries(${TARGET_NAME}VisualPlugin ${roscpp_LIBRARIES} ${GAZEBO_LIBRARIES})
 set_target_properties(${TARGET_NAME}VisualPlugin PROPERTIES COMPILE_FLAGS "${GAZEBO_CXX_FLAGS}")
 
 install(TARGETS

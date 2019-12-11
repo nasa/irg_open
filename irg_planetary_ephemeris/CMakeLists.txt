@@ -8,13 +8,7 @@ find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
-#find_package(xmlrpcpp REQUIRED)
-#find_package(rostime REQUIRED)
-#find_package(rosconsole REQUIRED)
-#find_package(rclcpp_serialization REQUIRED)
-#find_package(cpp_common REQUIRED)
 find_package(irg_spice REQUIRED)
-
 
 
 ## System dependencies are found with CMake's conventions

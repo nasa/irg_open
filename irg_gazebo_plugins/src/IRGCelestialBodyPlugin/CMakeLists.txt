@@ -9,7 +9,6 @@ set (SOURCES
 )
 
 include_directories(
-  ${OGRE_Paging_INCLUDE_DIR}
   ${GAZEBO_INCLUDE_DIRS}
   ${rclcpp_INCLUDE_DIRS}
 )
@@ -20,7 +19,7 @@ add_library(${TARGET_NAME} SHARED
 )
 
 target_link_libraries(${TARGET_NAME}
-  ${GAZEBO_libraries}
+  ${GAZEBO_LIBRARIES}
   ${rclcpp_LIBRARIES}
 )
 
