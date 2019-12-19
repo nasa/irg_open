@@ -37,7 +37,7 @@ else()
 endif()
 
 # mallan: add plugins env
-ament_environment_hooks(${CMAKE_CURRENT_SOURCE_DIR}/env-hooks/65.irg_gazebo_plugins.sh.in)
+ament_environment_hooks(${CMAKE_CURRENT_SOURCE_DIR}/env-hooks/65.irg_gazebo_plugins.dsv.in)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -145,5 +145,10 @@ include_directories(
 
 
 add_subdirectory(src)
+
+install(
+  DIRECTORY materials
+  DESTINATION share/${PROJECT_NAME}/
+)
 
 ament_package()

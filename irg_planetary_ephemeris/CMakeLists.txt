@@ -108,7 +108,7 @@ pkg_check_modules(YAMLCPP REQUIRED yaml-cpp>=0.5)
 
 ament_export_dependencies(${PROJECT_NAME} rclcpp tf2 tf2_ros irg_spice)
 
-ament_environment_hooks(${CMAKE_CURRENT_SOURCE_DIR}/env-hooks/70.irg_planetary_ephemeris.sh)
+ament_environment_hooks(${CMAKE_CURRENT_SOURCE_DIR}/env-hooks/70.irg_planetary_ephemeris.dsv.in)
 
 ###########
 ## Build ##
@@ -123,5 +123,10 @@ ament_environment_hooks(${CMAKE_CURRENT_SOURCE_DIR}/env-hooks/70.irg_planetary_e
 
 
 add_subdirectory(src)
+
+install(
+  DIRECTORY models
+  DESTINATION share/${PROJECT_NAME}/
+)
 
 ament_package()
