@@ -10,9 +10,7 @@ find_package(ament_cmake REQUIRED)
 ## Fetch ##
 ###########
 
-# TODO: Should be a real variable!
-set(BUILD_FOLDER "${CMAKE_CURRENT_SOURCE_DIR}/../../../build/irg_spice") 
-
+set(BUILD_FOLDER "${CMAKE_BINARY_DIR}")
 
 # Warning: The MD5 will break whenever they update the tarball!
 set(PACKAGE_URL http://naif.jpl.nasa.gov/pub/naif/toolkit/C/PC_Linux_GCC_64bit/packages/cspice.tar.Z)
