@@ -22,9 +22,9 @@
   <run_depend>rqt_gui</run_depend>
   <run_depend>rqt_gui_cpp</run_depend>
 
-  <!-- The export tag contains other, unspecified, tags >
+  <!-- The export tag contains other, unspecified, tags -->
   <export>
     <rqt_gui plugin="${prefix}/plugin.xml"/>
-  </export -->
+  </export>
   
 </package>
