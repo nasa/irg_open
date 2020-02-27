@@ -107,12 +107,12 @@ find_package(Qt5Widgets REQUIRED)
 ## LIBRARIES: libraries you create in this project that dependent projects also need
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
-#catkin_package(
-#   INCLUDE_DIRS   src
-#   LIBRARIES      
-#   CATKIN_DEPENDS roscpp rqt_gui_cpp
-#   #DEPENDS        Boost
-#)
+catkin_package(
+   INCLUDE_DIRS   src
+   LIBRARIES      irg_rqt_tools
+   CATKIN_DEPENDS roscpp rqt_gui_cpp
+   #DEPENDS        Boost
+)
 
 ###########
 ## Build ##
@@ -122,7 +122,7 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-#add_subdirectory(src)
+add_subdirectory(src)
 
 #############
 ## Install ##
@@ -130,6 +130,6 @@ include_directories(
 # all install targets should use catkin DESTINATION variables
 # See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
 
-#install(FILES plugin.xml
-#  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-#)
+install(FILES plugin.xml
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
