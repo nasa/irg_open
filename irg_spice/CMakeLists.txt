@@ -17,7 +17,7 @@ set(PACKAGE_URL http://naif.jpl.nasa.gov/pub/naif/toolkit/C/PC_Linux_GCC_64bit/p
 set(PACKAGE_MD5 b776166eea01b562466f978754c9d3c7)
 set(DOWNLOAD_DIR   ${CMAKE_CURRENT_SOURCE_DIR}/tarball)
 set(DOWNLOAD_PATH "${DOWNLOAD_DIR}/cspice.tar.Z")
-message("Downloading file: ${DOWNLOAD_PATH}")
+message(STATUS "Downloading file: ${DOWNLOAD_PATH}")
 
 # If we don't already have the correct download file, re-download it.
 if(EXISTS ${DOWNLOAD_PATH})
@@ -28,10 +28,10 @@ endif()
 
 if(NOT ${existingMd5} STREQUAL ${PACKAGE_MD5})
   file(MAKE_DIRECTORY ${DOWNLOAD_DIR})
-  message("Downloading file: ${PACKAGE_URL}")
+  message(STATUS "Downloading file: ${PACKAGE_URL}")
   file(DOWNLOAD ${PACKAGE_URL} ${DOWNLOAD_PATH} SHOW_PROGRESS EXPECTED_MD5=${PACKAGE_MD5})
 else()
-  message("Already have the cspice tarball.")
+  message(STATUS "Already have the cspice tarball.")
 endif()
 
 # Copy the downloaded tarball to the build folder so we don't pollute the /src folder
@@ -42,7 +42,7 @@ file(COPY ${DOWNLOAD_PATH} DESTINATION ${BUILD_FOLDER})
 execute_process(COMMAND tar -xf ${BUILD_TARBALL} WORKING_DIRECTORY ${BUILD_FOLDER})
 set(UNPACK_FOLDER "${BUILD_FOLDER}/cspice")
 
-message("Finished unpacking the file.")
+message(STATUS "Finished unpacking the file.")
 
 ###########
 ## Build ##
