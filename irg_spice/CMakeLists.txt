@@ -12,27 +12,37 @@ find_package(ament_cmake REQUIRED)
 
 set(BUILD_FOLDER "${CMAKE_BINARY_DIR}")
 
-# Warning: The MD5 will break whenever they update the tarball!
-set(PACKAGE_URL http://naif.jpl.nasa.gov/pub/naif/toolkit/C/PC_Linux_GCC_64bit/packages/cspice.tar.Z)
-set(PACKAGE_MD5 b776166eea01b562466f978754c9d3c7)
-set(DOWNLOAD_DIR   ${CMAKE_CURRENT_SOURCE_DIR}/tarball)
-set(DOWNLOAD_PATH "${DOWNLOAD_DIR}/cspice.tar.Z")
-message(STATUS "Downloading file: ${DOWNLOAD_PATH}")
-
-# If we don't already have the correct download file, re-download it.
-if(EXISTS ${DOWNLOAD_PATH})
-  file(MD5 ${DOWNLOAD_PATH} existingMd5)
+# Check if this was already downloaded for the VIPER project...
+set(ALT_TAR_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/../../rgsw_dependencies/other_dependencies/cspice.tar.Z)
+if(EXISTS ${ALT_TAR_LOCATION})
+  message(STATUS "Found cspice tarball at ${ALT_TAR_LOCATION}")
+  set(DOWNLOAD_PATH ${ALT_TAR_LOCATION})
 else()
-  set(existingMd5 "NA")
+  # Download it from the web
+  # Warning: The MD5 will break whenever they update the tarball!
+  set(PACKAGE_URL http://naif.jpl.nasa.gov/pub/naif/toolkit/C/PC_Linux_GCC_64bit/packages/cspice.tar.Z)
+  set(PACKAGE_MD5 b776166eea01b562466f978754c9d3c7)
+  set(DOWNLOAD_DIR   ${CMAKE_CURRENT_SOURCE_DIR}/tarball)
+  set(DOWNLOAD_PATH "${DOWNLOAD_DIR}/cspice.tar.Z")
+  message(STATUS "Downloading file: ${DOWNLOAD_PATH}")
+
+  # If we don't already have the correct download file, re-download it.
+  if(EXISTS ${DOWNLOAD_PATH})
+    file(MD5 ${DOWNLOAD_PATH} existingMd5)
+  else()
+    set(existingMd5 "NA")
+  endif()
+
+  if(NOT ${existingMd5} STREQUAL ${PACKAGE_MD5})
+    file(MAKE_DIRECTORY ${DOWNLOAD_DIR})
+    message(STATUS "Downloading file: ${PACKAGE_URL}")
+    file(DOWNLOAD ${PACKAGE_URL} ${DOWNLOAD_PATH} SHOW_PROGRESS EXPECTED_MD5 ${PACKAGE_MD5})
+  else()
+    message(STATUS "Already have the cspice tarball.")
+  endif()
+
 endif()
 
-if(NOT ${existingMd5} STREQUAL ${PACKAGE_MD5})
-  file(MAKE_DIRECTORY ${DOWNLOAD_DIR})
-  message(STATUS "Downloading file: ${PACKAGE_URL}")
-  file(DOWNLOAD ${PACKAGE_URL} ${DOWNLOAD_PATH} SHOW_PROGRESS EXPECTED_MD5=${PACKAGE_MD5})
-else()
-  message(STATUS "Already have the cspice tarball.")
-endif()
 
 # Copy the downloaded tarball to the build folder so we don't pollute the /src folder
 set(BUILD_TARBALL "${BUILD_FOLDER}/cspice.tar.Z")
@@ -48,8 +58,8 @@ message(STATUS "Finished unpacking the file.")
 ## Build ##
 ###########
 
-# Rebuild everything (not strictly necessary but should be easy)
-execute_process(COMMAND ./makeall.csh WORKING_DIRECTORY ${UNPACK_FOLDER})
+# Rebuild everything (optional, it comes prebuilt)
+#execute_process(COMMAND ./makeall.csh WORKING_DIRECTORY ${UNPACK_FOLDER})
 
 # Get the list of built files
 file(GLOB libFiles  "${UNPACK_FOLDER}/lib/*.a"    )
