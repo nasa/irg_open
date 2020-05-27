@@ -40,7 +40,7 @@ IrradianceMapPlugin::IrradianceMapPlugin() :
   m_background_color = ColourValue(0.00022f, 0.00022f, 0.00022f, 1.0f);
 
   // Initialize ros, if it has not already been initialized.
-  if (!rclcpp::is_initialized)
+  if (!rclcpp::ok())
   {
     int argc = 0;
     char** argv = NULL;
