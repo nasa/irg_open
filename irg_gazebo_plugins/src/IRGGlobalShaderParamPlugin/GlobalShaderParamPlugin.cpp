@@ -193,9 +193,10 @@ void GlobalShaderParamPlugin::cacheParams(int8_t shaderType , const std::string&
                       const GpuConstantDefinition* paramDef = gpuParams->_findNamedConstantDefinition(paramName);
                       if(paramDef) {
                         paramsList.push_back(gpuParams);
-                        gzmsg << "-- " << paramName.c_str() << " found in "
-                              << shaderTypeName(shaderType) << " program: "
-                              << matName.c_str() << " (" << gpuParams.get() << ")\n";
+                        // Useful for debugging, but creates too much output
+                        //gzmsg << "-- " << paramName.c_str() << " found in "
+                        //      << shaderTypeName(shaderType) << " program: "
+                        //      << matName.c_str() << " (" << gpuParams.get() << ")\n";
                       }
                     }
                   }
@@ -208,9 +209,10 @@ void GlobalShaderParamPlugin::cacheParams(int8_t shaderType , const std::string&
                       const GpuConstantDefinition* paramDef = gpuParams->_findNamedConstantDefinition(paramName);
                       if(paramDef) {
                         paramsList.push_back(gpuParams);
-                        gzmsg << "-- " << paramName.c_str() << " found in "
-                              << shaderTypeName(shaderType) << " program: "
-                              << matName.c_str() << " (" << gpuParams.get() << ")\n";
+                        // Useful for debugging, but creates too much output
+                        //gzmsg << "-- " << paramName.c_str() << " found in "
+                        //      << shaderTypeName(shaderType) << " program: "
+                        //      << matName.c_str() << " (" << gpuParams.get() << ")\n";
                       }
                     }
                   }
