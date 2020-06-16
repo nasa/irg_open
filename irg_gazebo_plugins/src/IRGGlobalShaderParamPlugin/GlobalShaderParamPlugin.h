@@ -47,6 +47,8 @@ protected:
   void setParam(Ogre::GpuProgramParametersSharedPtr params,
                 const std::string& paramName, const std::string& paramValue);
 
+  std::string shaderTypeName(int8_t t);
+
 private:
   bool m_hasUpdates;
   bool m_cacheCleared;

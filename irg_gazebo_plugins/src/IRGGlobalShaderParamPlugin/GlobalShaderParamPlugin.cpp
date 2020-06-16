@@ -39,9 +39,6 @@ GlobalShaderParamPlugin::GlobalShaderParamPlugin() :
   if( ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Debug) ) {
    ros::console::notifyLoggerLevelsChanged();
   }
-//   gzmsg << "## GlobalShaderParamPlugin ctor" << std::endl;
-//   std::cerr << "## GlobalShaderParamPlugin ctor" << std::endl;
-//   ROS_INFO("-- GlobalShaderParamPlugin ctor (Visual Plugin)");
 }
 
 GlobalShaderParamPlugin::~GlobalShaderParamPlugin()
@@ -187,17 +184,18 @@ void GlobalShaderParamPlugin::cacheParams(int8_t shaderType , const std::string&
           for (unsigned p = 0; p < technique->getNumPasses(); p++) {
             Ogre::Pass *pass = technique->getPass(p);
             if(pass && pass->isProgrammable()) {
-              //ROS_INFO("* %s %d", matName.c_str(), shaderType);
               switch(shaderType) {
                 case ShaderParamUpdate::SHADER_TYPE_VERTEX:
                   if(pass->hasVertexProgram()) {
                     Ogre::GpuProgramParametersSharedPtr gpuParams = pass->getVertexProgramParameters();
                     if(!gpuParams.isNull()) {
-                      // if lookup of paramName succeeds, add gpuParams to list 
+                      // if lookup of paramName succeeds, add gpuParams to list
                       const GpuConstantDefinition* paramDef = gpuParams->_findNamedConstantDefinition(paramName);
                       if(paramDef) {
                         paramsList.push_back(gpuParams);
-                        ROS_INFO("-- %s found in %d program : %s (%p)", paramName.c_str(), shaderType, matName.c_str(), gpuParams.get());
+                        gzmsg << "-- " << paramName.c_str() << " found in "
+                              << shaderTypeName(shaderType) << " program: "
+                              << matName.c_str() << " (" << gpuParams.get() << ")\n";
                       }
                     }
                   }
@@ -206,11 +204,13 @@ void GlobalShaderParamPlugin::cacheParams(int8_t shaderType , const std::string&
                   if(pass->hasFragmentProgram()) {
                     Ogre::GpuProgramParametersSharedPtr gpuParams = pass->getFragmentProgramParameters();
                     if(!gpuParams.isNull()) {
-                      // if lookup of paramName succeeds, add gpuParams to list 
+                      // if lookup of paramName succeeds, add gpuParams to list
                       const GpuConstantDefinition* paramDef = gpuParams->_findNamedConstantDefinition(paramName);
                       if(paramDef) {
                         paramsList.push_back(gpuParams);
-                        ROS_INFO("-- %s found in %d program : %s (%p)", paramName.c_str(), shaderType, matName.c_str(), gpuParams.get());
+                        gzmsg << "-- " << paramName.c_str() << " found in "
+                              << shaderTypeName(shaderType) << " program: "
+                              << matName.c_str() << " (" << gpuParams.get() << ")\n";
                       }
                     }
                   }
@@ -222,7 +222,7 @@ void GlobalShaderParamPlugin::cacheParams(int8_t shaderType , const std::string&
       }
     }
   }
-  ROS_INFO("GlobalShaderParamPlugin::cacheParams(%s, %ld)", paramName.c_str(), paramsList.size());
+  gzmsg << "GlobalShaderParamPlugin::cacheParams(" << paramName.c_str() << ", " << paramsList.size() << ")\n";
 }
 
 
@@ -232,7 +232,6 @@ void GlobalShaderParamPlugin::cacheParams(int8_t shaderType , const std::string&
 void GlobalShaderParamPlugin::onPreRender()
 {
   if(m_hasUpdates) {
-    //ROS_INFO("onPreRender");
     Lock guard(m_mutex);
     if(m_cacheCleared) {
       buildCache();
@@ -273,7 +272,6 @@ void GlobalShaderParamPlugin::setParam(Ogre::GpuProgramParametersSharedPtr param
       case Ogre::GCT_FLOAT1:
       {
         Ogre::Real value = Ogre::StringConverter::parseReal(paramValue);
-        //ROS_INFO("setParam() : params->setNamedConstant(%s, %f) (%p)", paramName.c_str(), value, params.get());
         params->setNamedConstant(paramName, value);
         break;
       }
@@ -282,7 +280,6 @@ void GlobalShaderParamPlugin::setParam(Ogre::GpuProgramParametersSharedPtr param
       case Ogre::GCT_FLOAT2:
       {
         Ogre::Vector2 value = Ogre::StringConverter::parseVector2(paramValue);
-        //ROS_INFO("setParam() : params->setNamedConstant(%s, %.2f %.2f) (%p)", paramName.c_str(), value.x, value.y, params.get());
         params->setNamedConstant(paramName, value);
         break;
       }
@@ -291,7 +288,6 @@ void GlobalShaderParamPlugin::setParam(Ogre::GpuProgramParametersSharedPtr param
       case Ogre::GCT_FLOAT3:
       {
         Ogre::Vector3 value = Ogre::StringConverter::parseVector3(paramValue);
-        //ROS_INFO("setParam() : params->setNamedConstant(%s, %.2f %.2f %.2f) (%p)", paramName.c_str(), value.x, value.y, value.z, params.get());
         params->setNamedConstant(paramName, value);
         break;
       }
@@ -299,7 +295,6 @@ void GlobalShaderParamPlugin::setParam(Ogre::GpuProgramParametersSharedPtr param
       case Ogre::GCT_FLOAT4:
       {
         Ogre::Vector4 value = Ogre::StringConverter::parseVector4(paramValue);
-        //ROS_INFO("setParam() : params->setNamedConstant(%s, [%.2f %.2f %.2f %.2f]) (%p)", paramName.c_str(), value.x, value.y, value.z, value.w, params.get());
         params->setNamedConstant(paramName, value);
         break;
       }
@@ -315,4 +310,14 @@ void GlobalShaderParamPlugin::setParam(Ogre::GpuProgramParametersSharedPtr param
   }
 }
 
-
+std::string GlobalShaderParamPlugin::shaderTypeName(int8_t type)
+{
+  switch(type){
+  case ShaderParamUpdate::SHADER_TYPE_VERTEX:
+    return "vertex";
+  case ShaderParamUpdate::SHADER_TYPE_FRAGMENT:
+    return "fragment";
+  default:
+    return "undefined";
+  }
+}
