@@ -1,3 +1,7 @@
+// The Notices and Disclaimers for Ocean Worlds Autonomy Testbed for Exploration
+// Research and Simulation can be found in README.md in the root directory of
+// this repository.
+
 #ifndef OW_EPHEMERIS_H_
 #define OW_EPHEMERIS_H_
 
