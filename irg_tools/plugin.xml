@@ -1,0 +1,36 @@
+<library path="lib/libirg_rqt_tools">
+  <class name="irg_rqt_tools/ImageTrigger" type="irg_rqt_tools::ImageTrigger" base_class_type="rqt_gui_cpp::Plugin">
+    <description>
+      Buttons to trigger image capture
+    </description>
+    <qtgui>
+      <group>
+        <label>Robot Tools</label>
+        <icon type="theme">folder</icon>
+        <statustip>Plugins related to robot tools</statustip>
+      </group>
+      <label>[irg] Image Trigger</label>
+      <icon type="theme">camera-photo</icon>
+      <statustip>Buttons to trigger image capture</statustip>
+    </qtgui>
+  </class>
+
+  <class name="irg_rqt_tools/PanTilt" type="irg_rqt_tools::PanTilt" base_class_type="rqt_gui_cpp::Plugin">
+    <description>
+      Sliders for pan/tilt
+    </description>
+    <qtgui>
+      <group>
+        <label>Robot Tools</label>
+        <icon type="theme">folder</icon>
+        <statustip>Plugins related to robot tools</statustip>
+      </group>
+      <label>[irg] Pan Tilt</label>
+      <icon type="theme">transform-move</icon>
+      <statustip>Sliders for pan/tilt</statustip>
+    </qtgui>
+  </class>
+  
+</library>
+
+

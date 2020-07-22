@@ -1,8 +1,7 @@
-// __BEGIN_LICENSE__
-// Copyright (c) 2018-2019, United States Government as represented by the
-// Administrator of the National Aeronautics and Space Administration. All
-// rights reserved.
-// __END_LICENSE__
+// The Notices and Disclaimers for Ocean Worlds Autonomy Testbed for Exploration
+// Research and Simulation can be found in README.md in the root directory of
+// this repository.
+
 #include "CameraCompositorListener.h"
 #include <gazebo/common/Assert.hh>
 
@@ -25,11 +24,11 @@ CameraCompositorListener::CameraCompositorListener(sdf::ElementPtr sdf)
 
   // Declare shader param names and default values
   initParam("exposure", 1.0);
-  initParam("gamma", 1.0);
   initParam("energy_conversion", 1.0);
   initParam("read_noise", 0.64);
   initParam("shot_noise", 0.09);
   initParam("gain", 1.0);
+  initParam("gamma", 1.0);
   initParam("adc_bits", 12.0);
 
   // Get new values from the sdf element
