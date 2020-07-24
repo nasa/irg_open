@@ -1,3 +1,7 @@
+The Notices and Disclaimers for Ocean Worlds Autonomy Testbed for Exploration
+Research and Simulation can be found in README.md in the root directory of
+this repository.
+
 irg_planetary_ephemeris
 ==================================
 
@@ -7,7 +11,7 @@ Models of the sun and some planets are in the `models` directory. They use
 renders at a distance of 190000, while the planets render at a distance of
 170000. These values more than different enough to prevent z-fighting when the
 sun passes behind a planet, and they are close enough to be within the default
-200000 far clip plan set by IRGNearFarClipPlugin.
+200000 far clip plane set by IRGNearFarClipPlugin.
 
 There is currently no mechanism for setting celestial body render distances at
 runtime. If you want to use different values you must make your own model.

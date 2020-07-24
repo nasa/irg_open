@@ -1,14 +1,19 @@
+The Notices and Disclaimers for Ocean Worlds Autonomy Testbed for Exploration
+Research and Simulation can be found in README.md in the root directory of
+this repository.
+
 IRG Gazebo plugins
 ==================================
 IRG Camera Sim Plugins
 ----------------------------------
 These plugins use an Ogre compositor to simulate the effects of a digital camera
 on your scene rendering. The compositor renders the scene to floating point
-texture, applies exposure, applies gamma, applies "energy conversion", applies
-noise, applies sensor gain, and renders the result to whatever texture or
-framebuffer the user has defined in his SDF code. Gamma is not a property of
-digital cameras, but it was easy to add and gives the developer a useful tool
-for rendering human-consumable images in the Gazebo GUI.
+texture, applies exposure, applies "energy conversion", applies noise, applies
+sensor gain, applies gamma, downsamples to a specified bit-depth, and renders
+the result to whatever texture or framebuffer the user has defined in his SDF
+code. Gamma is not a property of digital cameras, but it was easy to add and
+gives the developer a useful tool for rendering human-consumable images in the
+Gazebo GUI.
 
 IMPORTANT: For these plugins to work correctly your graphics card must support
 frame buffer object (FBO) rendering to `PF_FLOAT32_RGB`. Inspect
@@ -57,11 +62,11 @@ settled on a VisualPlugin instead.
 The plugins can be initialized with user-defined values using the following parameters:
  - `<topic_uid>` - Changes topic from `/gazebo/plugins/camera_sim/<topic>` to `/gazebo/plugins/camera_sim/<topic_uid>/<topic>`.
  - `<exposure>` - Multiply original image by this value. Default = 1.0
- - `<gamma>` - Curve original image by this power. Default = 1.0
  - `<energy_conversion>` - Pixel value per lux-second. A conversion factor from luminous energy to normalized sensor output. Default = 1.0
  - `<read_noise>` - Read noise coefficient. Default = 0.64
  - `<shot_noise>` - Shot noise coefficient. Default = 0.09
  - `<gain>` - Simulate sensor gain by multiplying 16-bit version of exposed image by this value. Default = 1.0
+ - `<gamma>` - Curve final image by this power. Default = 1.0
  - `<adc_bits>` - Bit depth of camera's analog-to-digital converter. Default = 12
 
 ### Topics

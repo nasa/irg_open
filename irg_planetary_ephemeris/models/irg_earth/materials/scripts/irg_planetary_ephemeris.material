@@ -22,6 +22,9 @@ fragment_program irg_planet_frag glsl
     param_named sunIntensity float3 1.0 1.0 1.0
 
     param_named diffuseMap int 0
+
+    # Modify this to be desired_albedo / texture_mapped_to_sphere_albedo
+    param_named albedoScale float 1.0
   }
 }
 
@@ -35,6 +38,8 @@ material irg/earth
       }
       
       fragment_program_ref irg_planet_frag {
+        # desired_albedo / texture_mapped_to_sphere_albedo = 0.306 / 0.4054
+        param_named albedoScale float 0.755
       }
 
       ambient  0 0 0
@@ -59,6 +64,8 @@ material irg/jupiter
       }
       
       fragment_program_ref irg_planet_frag {
+        # desired_albedo / texture_mapped_to_sphere_albedo = 0.503 / 0.5342
+        param_named albedoScale float 0.942
       }
 
       ambient  0 0 0
@@ -84,6 +91,8 @@ material irg/saturn
       }
       
       fragment_program_ref irg_planet_frag {
+        # desired_albedo / texture_mapped_to_sphere_albedo = 0.342 / 0.7707
+        param_named albedoScale float 0.444
       }
 
       ambient  0 0 0
