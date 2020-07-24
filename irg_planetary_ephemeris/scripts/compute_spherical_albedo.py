@@ -1,5 +1,9 @@
 #!/usr/bin/python3
 
+# The Notices and Disclaimers for Ocean Worlds Autonomy Testbed for Exploration
+# Research and Simulation can be found in README.md in the root directory of
+# this repository.
+
 # Compute the albedo of a sphere mapped with a specified PNG. Texels are
 # weighted based on their area when mapped onto the sphere, more weight at
 # the equator and less weight at the poles.

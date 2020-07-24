@@ -154,9 +154,6 @@ void main()
   // exposure
   color.rgb *= vec3(exposure);
 
-  // gamma
-  color.rgb = pow(color.rgb, vec3(gamma));
-
   // convert light power to sensor signal
   color.rgb *= vec3(energy_conversion);
 
@@ -166,6 +163,13 @@ void main()
 
   // sensor gain
   color.rgb *= vec3(gain);
+
+  // gamma
+  // This should be the very last step so that it causes exaggerated banding
+  // artifacts after changing to a lower bit-depth. But that would be difficult
+  // to compute and this is a purely cosmetic feature that is not part of real
+  // digital cameras, so we will forego that level of accuracy.
+  color.rgb = pow(color.rgb, vec3(gamma));
 
   // downsample to simulate camera's analog-to-digital converter
   float power_of_two = pow(2.0, adc_bits);
