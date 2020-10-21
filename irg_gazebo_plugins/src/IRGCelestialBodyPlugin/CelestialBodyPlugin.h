@@ -9,6 +9,7 @@
 #include "gazebo/util/system.hh"
 #include <gazebo/common/common.hh>
 #include <gazebo/physics/PhysicsTypes.hh>
+#include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
 
 namespace irg {
