@@ -31,7 +31,7 @@ protected:
   //void onShaderUpdateMsg(const std_msgs::String::ConstPtr& msg);
   void onShaderParamUpdate(const irg_gazebo_plugins::ShaderParamUpdate::ConstPtr& msg);
 
-  void onPreRender();
+  void onPostRender();
   void onAddEntity();
   void onDeleteEntity();
   void onWorldCreated();
@@ -52,7 +52,7 @@ private:
   bool m_hasUpdates;
   bool m_cacheCleared;
 
-  gazebo::event::ConnectionPtr m_preRenderConnection;
+  gazebo::event::ConnectionPtr m_postRenderConnection;
   gazebo::event::ConnectionPtr m_entityAddedConnection;
   gazebo::event::ConnectionPtr m_entityDeletedConnection;
   gazebo::event::ConnectionPtr m_worldCreatedConnection;
