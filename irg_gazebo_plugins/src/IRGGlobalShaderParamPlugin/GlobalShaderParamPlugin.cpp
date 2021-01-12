@@ -85,8 +85,11 @@ void GlobalShaderParamPlugin::Load(rendering::VisualPtr _sensor, sdf::ElementPtr
           std::bind(&GlobalShaderParamPlugin::onShaderParamUpdate, this, std::placeholders::_1));
   
   //-- connection callbacks ---------------
-  m_preRenderConnection = event::Events::ConnectPreRender(
-      boost::bind(&GlobalShaderParamPlugin::onPreRender, this));
+  // This should be onPreRender, but we have found shaders in complex scenes
+  // are not all available before prerender. Using onPostRender instead, though
+  // this may result in a one-frame delay in some shader updates.
+  m_postRenderConnection = event::Events::ConnectPostRender(
+      boost::bind(&GlobalShaderParamPlugin::onPostRender, this));
 
   m_entityAddedConnection = event::Events::ConnectAddEntity(
       boost::bind(&GlobalShaderParamPlugin::clearCache, this));
@@ -236,7 +239,7 @@ void GlobalShaderParamPlugin::cacheParams(int8_t shaderType , const std::string&
 /**
  * 
  */
-void GlobalShaderParamPlugin::onPreRender()
+void GlobalShaderParamPlugin::onPostRender()
 {
   if(m_hasUpdates) {
     Lock guard(m_mutex);
