@@ -32,7 +32,7 @@ namespace gazebo {
     void OnUpdate();
 
     void ProcessLink(const rendering::VisualPtr& visual, 
-                     const int linkIndex,
+                     const unsigned int linkIndex,
                      const rendering::Heightmap* heightmap);
 
     // Pass link position in world space, get position in texture space

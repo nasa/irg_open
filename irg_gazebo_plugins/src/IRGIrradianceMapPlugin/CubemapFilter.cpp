@@ -82,10 +82,9 @@ CubemapFilter::CubemapFilter(const int unique_index, const String& source_cubema
 
   String irradiance_cubemap_name("IrradianceEnvironmentCubemap" + StringConverter::toString(m_unique_index));
   const int size = 32;
-  const int numMipMaps = log2(size);
   m_texture = TextureManager::getSingleton().createManual(
         irradiance_cubemap_name, ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
-        TEX_TYPE_CUBE_MAP, size, size, 0/*numMipMaps*/, PF_FLOAT32_RGB,
+        TEX_TYPE_CUBE_MAP, size, size, 0, PF_FLOAT32_RGB,
         TU_DYNAMIC_WRITE_ONLY | TU_RENDERTARGET | TU_AUTOMIPMAP);
 
   for (int i = 0; i < 6; i++)
