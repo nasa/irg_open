@@ -78,7 +78,7 @@ void LinkTracksPlugin::Load(rendering::VisualPtr _sensor, sdf::ElementPtr _sdf)
     }
   }
   // initialize LinkPos and LinkEnable variables
-  for(auto& name : mLinkName) {
+  for(unsigned int i = 0; i < mLinkName.size(); i++) {
     mLinkPos.push_back(Vector3(0.0, 0.0, 0.0));
     mLinkEnabled.push_back(1);
   }
@@ -345,7 +345,7 @@ void LinkTracksPlugin::OnUpdate()
     return;
   }
 
-  for(int i = 0; i < mLinkName.size(); i++) {
+  for(unsigned int i = 0; i < mLinkName.size(); i++) {
     ProcessLink(scene->GetVisual(mLinkName[i]), i, heightmap);
   }
 
@@ -359,7 +359,7 @@ void LinkTracksPlugin::OnUpdate()
  * Get current link position and draw into texture
  */
 void LinkTracksPlugin::ProcessLink(const rendering::VisualPtr& visual, 
-                                   const int linkIndex, 
+                                   const unsigned int linkIndex, 
                                    const rendering::Heightmap* heightmap)
 {
   if(!visual) {
@@ -517,7 +517,7 @@ void LinkTracksPlugin::OnSaveImage(const std_msgs::StringConstPtr& msg)
  */
 void LinkTracksPlugin::OnLinkEnable(const std_msgs::UInt8MultiArrayConstPtr& msg)
 {
-  for(int i = 0; i < msg->data.size(); i++) {
+  for(unsigned int i = 0; i < msg->data.size(); i++) {
     if(i < mLinkEnabled.size()) {
       mLinkEnabled[i] = msg->data[i];
     }
