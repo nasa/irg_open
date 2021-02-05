@@ -17,7 +17,7 @@ namespace irg {
  * @brief This class updates camera sim shader params before rendering.
  * Param (GLSL uniform) initial values are collected from a plugin declaration
  * in your SDF code. These params can also be modified by publishing a ROS
- * message to the appropriate camera_sim/* topic. notifyMaterialRender() applies
+ * message to the appropriate camera_sim topic. notifyMaterialRender() applies
  * these params to the camera sim's compositor's shaders before rendering.
  */
 class CameraCompositorListener : public Ogre::CompositorInstance::Listener
