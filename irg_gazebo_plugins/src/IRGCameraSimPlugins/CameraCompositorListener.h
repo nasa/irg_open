@@ -19,6 +19,10 @@ namespace irg {
  * in your SDF code. These params can also be modified by publishing a ROS
  * message to the appropriate camera_sim topic. notifyMaterialRender() applies
  * these params to the camera sim's compositor's shaders before rendering.
+ *
+ * Ogre uses "parameter" for shader uniforms, while ROS uses "parameter" for
+ * node attributes. In this plugin we use "param" for shader uniforms and
+ * "rosparam" for ROS parameters.
  */
 class CameraCompositorListener : public Ogre::CompositorInstance::Listener
 {
@@ -38,7 +42,10 @@ private:
   // Prefer gazebo_ros::Node over rclcpp::Node because spin() is called by
   // gazebo_ros so you don't have to. Somebody must call spin or callback
   // functions will never get called.
-  gazebo_ros::Node::SharedPtr m_node_handle;
+  gazebo_ros::Node::SharedPtr m_node;
+
+  /// Handle to ROS parameters callback
+  rclcpp::Node::OnSetParametersCallbackHandle::SharedPtr m_rosparam_callback;
 
   std::string m_topic_uid;
 

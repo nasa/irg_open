@@ -11,7 +11,26 @@ using namespace irg;
 
 CameraCompositorListener::CameraCompositorListener(sdf::ElementPtr sdf)
 {
-  m_node_handle = gazebo_ros::Node::Get(sdf);
+  m_node = gazebo_ros::Node::Get(sdf);
+
+  // Add callback for setting of rosparams
+  auto rosparam_callback = [this](std::vector<rclcpp::Parameter> rosparams) {
+    auto result = rcl_interfaces::msg::SetParametersResult();
+    result.successful = true;
+    for (const auto & rosparam : rosparams) {
+      std::string rosparam_name = rosparam.get_name();
+      if (m_param_map.find(rosparam_name) == m_param_map.end()) {
+        gzwarn << "Unrecognized ROS param: " << rosparam_name;
+        result.successful = false;
+      }
+      else {
+        m_param_map[rosparam_name].m_value =
+            static_cast<Ogre::Real>(rosparam.as_double());
+      }
+    }
+    return result;
+  };
+  m_rosparam_callback = m_node->add_on_set_parameters_callback(rosparam_callback);
 
   // Get UID for topic from the sdf element
   if (sdf->HasElement("topic_uid")) {
@@ -67,7 +86,10 @@ void CameraCompositorListener::initParam(std::string name, double initial_value)
     //[this, name](const std_msgs::Float64::ConstPtr& msg){ m_param_map[name].m_value = msg->data; };
 
   // Subscribe using our fancy bound function pointer.
-  m_param_map[name].m_subscriber = m_node_handle->create_subscription<std_msgs::msg::Float64>(topic, 1, func);
+  m_param_map[name].m_subscriber = m_node->create_subscription<std_msgs::msg::Float64>(topic, 1, func);
+
+  // Declare as a rosparam. (This will invoke m_rosparam_callback)
+  m_node->declare_parameter(name, initial_value);
 }
 
 void CameraCompositorListener::onParamUpdate(const std_msgs::msg::Float64::SharedPtr msg, std::string name)
