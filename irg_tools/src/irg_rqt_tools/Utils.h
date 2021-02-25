@@ -6,12 +6,13 @@
 
 #include "rclcpp/rclcpp.hpp"
 
-namespace irg_rqt_tools {
-
-  class Utils {
-  public:
-    static QStringList getAllTopics(rclcpp::Node::SharedPtr node, const QString& messageType);
-  };
+namespace irg_rqt_tools
+{
+class Utils
+{
+public:
+  static QStringList getAllTopics(rclcpp::Node::SharedPtr node, const QString& messageType);
+};
 
 }
 
