@@ -10,36 +10,33 @@
 #include <QString>
 #include <QWidget>
 
-namespace irg_rqt_tools {
+namespace irg_rqt_tools
+{
+class ImageTrigger : public rqt_gui_cpp::Plugin
+{
+  Q_OBJECT
 
-  class ImageTrigger
-    : public rqt_gui_cpp::Plugin
-  {
-    Q_OBJECT
+public:
+  ImageTrigger();
 
-  public:
-    ImageTrigger();
+  virtual void initPlugin(qt_gui_cpp::PluginContext& context);
 
-    virtual void initPlugin(qt_gui_cpp::PluginContext& context);
+  virtual void shutdownPlugin();
 
-    virtual void shutdownPlugin();
+  virtual void saveSettings(qt_gui_cpp::Settings& plugin_settings, qt_gui_cpp::Settings& instance_settings) const;
+  virtual void restoreSettings(const qt_gui_cpp::Settings& plugin_settings,
+                               const qt_gui_cpp::Settings& instance_settings);
 
-    virtual void saveSettings(qt_gui_cpp::Settings& plugin_settings, 
-                              qt_gui_cpp::Settings& instance_settings) const;
-    virtual void restoreSettings(const qt_gui_cpp::Settings& plugin_settings, 
-                                 const qt_gui_cpp::Settings& instance_settings);
-    
-  public slots:
-    void refreshTopics();
+public slots:
+  void refreshTopics();
 
-  protected:
-    QStringList getTriggerTopics();    
+protected:
+  QStringList getTriggerTopics();
 
-  protected:
-
-    Ui::ImageTriggerPanel  m_ui;
-    QWidget*               m_widget;
-  };
+protected:
+  Ui::ImageTriggerPanel m_ui;
+  QWidget* m_widget;
+};
 
 } // namespace irg_rqt_tools
 
