@@ -2,7 +2,6 @@
 #define irg_rqt_tools_ImageTrigger_h
 
 #include <rqt_gui_cpp/plugin.h>
-#include <ros/ros.h>
 
 #include <ui_ImageTrigger.h>
 

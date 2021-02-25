@@ -14,31 +14,33 @@ set(HEADERS
   Utils.h
 )
 
-set( MOC_HEADERS
+set(MOC_HEADERS
   ImageTrigger.h
   ImageTriggerWidget.h
   PanTilt.h
 )
 
-set( UIC_SOURCES 
+set(UIC_SOURCES 
   ImageTrigger.ui 
   ImageTriggerWidget.ui 
   PanTilt.ui
 )
 
-qt5_wrap_ui(UIC_FILES ${UIC_SOURCES} )
+qt5_wrap_ui(UIC_FILES ${UIC_SOURCES})
 qt5_wrap_cpp(MOC_FILES ${MOC_HEADERS})
+
 include_directories(
   ${Qt5Core_INCLUDE_DIRS}
   ${Qt5Widgets_INCLUDE_DIRS}
 )
-set( QT_LINK_LIBRARIES Qt5::Widgets )
+
+set(QT_LINK_LIBRARIES Qt5::Widgets)
 
 include_directories( 
   ${CMAKE_CURRENT_BINARY_DIR}
 )
 
-add_library(${TARGET}
+add_library(${TARGET} SHARED
   ${SOURCES}
   ${HEADERS}
   ${MOC_HEADERS}
@@ -48,11 +50,20 @@ add_library(${TARGET}
 
 target_link_libraries(${TARGET}
   ${QT_LINK_LIBRARIES}
-  ${catkin_LIBRARIES}
 )
 
-install(TARGETS ${TARGET}
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
+ament_target_dependencies(${TARGET}
+  rclcpp
+  rqt_gui_cpp
+  std_msgs
 )
+
+install(
+  TARGETS ${TARGET}
+  EXPORT ${TARGET}
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
+ament_export_libraries(${TARGET})
