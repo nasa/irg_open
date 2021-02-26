@@ -135,7 +135,7 @@ namespace irg_rqt_tools {
     QStringList topics = Utils::getAllTopics(node_, "std_msgs/msg/Float64");
     topics.append("");
     qSort(topics);
-    for (QStringList::const_iterator it = topics.begin(); it != topics.end(); it++) {
+    for(QStringList::const_iterator it = topics.begin(); it != topics.end(); it++) {
       QString label(*it);
       label.replace(" ", "/");
       m_ui.panTopicCombo->addItem(label, QVariant(*it));
@@ -145,22 +145,18 @@ namespace irg_rqt_tools {
 
     if(panTopic.isEmpty()) {
       for(int i = 0; i < topicList.count(); i++) {
-        //if(!topicList[i].contains("/delayed/")) {
-          if(topicList[i].contains("pan")) {
-            panTopic = topicList[i];
-            break;
-          }
-        //}
+        if(topicList[i].contains("pan")) {
+          panTopic = topicList[i];
+          break;
+        }
       }
     }
     if(tiltTopic.isEmpty()) {
       for(int i = 0; i < topicList.count(); i++) {
-        //if(!topicList[i].contains("/delayed/")) {
-          if(topicList[i].contains("tilt")) {
-            tiltTopic = topicList[i];
-            break;
-          }
-        //}
+        if(topicList[i].contains("tilt")) {
+          tiltTopic = topicList[i];
+          break;
+        }
       }
     }
     // restore previous topics
@@ -171,8 +167,7 @@ namespace irg_rqt_tools {
   void PanTilt::selectTopic(const QString& topic, QComboBox* combo)
   {
     int index = combo->findText(topic);
-    if (index == -1)
-    {
+    if (index == -1) {
       // add topic name to list if not yet in
       QString label(topic);
       label.replace(" ", "/");
@@ -185,7 +180,7 @@ namespace irg_rqt_tools {
   void PanTilt::onPanTopicChanged(int /*index*/)
   {
     std::string topicName = m_ui.panTopicCombo->currentText().toStdString();
-    if (topicName.empty()) {
+    if(topicName.empty()) {
       m_panPublisher.reset();
     } else {
       m_panPublisher = node_->create_publisher<std_msgs::msg::Float64>(topicName, 1000);
@@ -195,7 +190,7 @@ namespace irg_rqt_tools {
 
   void PanTilt::onTiltTopicChanged(int /*index*/) {
     std::string topicName = m_ui.tiltTopicCombo->currentText().toStdString();
-    if (topicName.empty()) {
+    if(topicName.empty()) {
       m_tiltPublisher.reset();
     } else {
       m_ui.tiltTopicCombo->setToolTip(topicName.c_str());
@@ -208,7 +203,7 @@ namespace irg_rqt_tools {
     msg.data = 0.01 * value;
     m_ui.panValueBut->setText("Pan " + QString::number(msg.data));
 
-    if (m_panPublisher) {
+    if(m_panPublisher) {
       m_panPublisher->publish(msg);
     }
   }
@@ -218,7 +213,7 @@ namespace irg_rqt_tools {
     msg.data = 0.01 * value;
     m_ui.tiltValueBut->setText("Tilt " + QString::number(msg.data));
 
-    if (m_tiltPublisher) {
+    if(m_tiltPublisher) {
       m_tiltPublisher->publish(msg);
     }
   }

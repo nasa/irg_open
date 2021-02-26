@@ -8,7 +8,11 @@ ImageTriggerWidget::ImageTriggerWidget(rclcpp::Node::SharedPtr node, QString top
   : QWidget(parent)
 {
   setupUi(this);
-  m_publisher = node->create_publisher<std_msgs::msg::Empty>(topic.toStdString(), 1000);
+
+  rclcpp::QoS qos(10);
+  qos.reliable();
+
+  m_publisher = node->create_publisher<std_msgs::msg::Empty>(topic.toStdString(), qos);
 
   QString triggerText = "/image_trigger";
   triggerBut->setText(topic.remove(triggerText));
