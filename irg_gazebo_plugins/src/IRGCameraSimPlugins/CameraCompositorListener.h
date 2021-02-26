@@ -34,10 +34,10 @@ public:
 
 private:
   /// \brief For initializing all data and a subscriber associated with a param
-  void initParam(std::string name, double initial_value);
+  void initParam(const std::string& name, const double initial_value);
 
   /// \brief Subscriber callback that allows user to set a param
-  void onParamUpdate(const std_msgs::msg::Float64::SharedPtr msg, std::string name);
+  void onParamUpdate(const std_msgs::msg::Float64::SharedPtr msg, const std::string& name);
 
   // Prefer gazebo_ros::Node over rclcpp::Node because spin() is called by
   // gazebo_ros so you don't have to. Somebody must call spin or callback

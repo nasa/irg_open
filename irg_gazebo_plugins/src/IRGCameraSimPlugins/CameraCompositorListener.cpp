@@ -14,14 +14,17 @@ CameraCompositorListener::CameraCompositorListener(sdf::ElementPtr sdf)
   m_node = gazebo_ros::Node::Get(sdf);
 
   // Add callback for setting of rosparams
-  auto rosparam_callback = [this](std::vector<rclcpp::Parameter> rosparams) {
+  auto rosparam_callback = [this](const std::vector<rclcpp::Parameter>& rosparams) {
     auto result = rcl_interfaces::msg::SetParametersResult();
     result.successful = true;
     for (const auto & rosparam : rosparams) {
-      std::string rosparam_name = rosparam.get_name();
+      const std::string& rosparam_name = rosparam.get_name();
       if (m_param_map.find(rosparam_name) == m_param_map.end()) {
-        gzwarn << "Unrecognized ROS param: " << rosparam_name;
         result.successful = false;
+        std::stringstream ss;
+        ss << "Unrecognized ROS param: " << rosparam_name;
+        result.reason = ss.str();
+        gzwarn << ss.str() << std::endl;
       }
       else {
         m_param_map[rosparam_name].m_value =
@@ -59,7 +62,7 @@ CameraCompositorListener::CameraCompositorListener(sdf::ElementPtr sdf)
   }
 }
 
-void CameraCompositorListener::initParam(std::string name, double initial_value)
+void CameraCompositorListener::initParam(const std::string& name, const double initial_value)
 {
   m_param_map[name].m_value = initial_value;
 
@@ -92,13 +95,12 @@ void CameraCompositorListener::initParam(std::string name, double initial_value)
   m_node->declare_parameter(name, initial_value);
 }
 
-void CameraCompositorListener::onParamUpdate(const std_msgs::msg::Float64::SharedPtr msg, std::string name)
+void CameraCompositorListener::onParamUpdate(const std_msgs::msg::Float64::SharedPtr msg, const std::string& name)
 {
   m_node->set_parameter(rclcpp::Parameter(name, msg->data));
 }
 
-void CameraCompositorListener::notifyMaterialRender(unsigned int pass_id,
-                                                    Ogre::MaterialPtr& mat)
+void CameraCompositorListener::notifyMaterialRender(const unsigned int pass_id, Ogre::MaterialPtr& mat)
 {
   GZ_ASSERT(!mat.isNull(), "Null Ogre3D material");
   Ogre::Technique* technique = mat->getTechnique(0);
