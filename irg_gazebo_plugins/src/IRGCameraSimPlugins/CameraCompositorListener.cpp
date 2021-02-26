@@ -94,7 +94,6 @@ void CameraCompositorListener::initParam(std::string name, double initial_value)
 
 void CameraCompositorListener::onParamUpdate(const std_msgs::msg::Float64::SharedPtr msg, std::string name)
 {
-  m_param_map[name].m_value = msg->data;
   m_node->set_parameter(rclcpp::Parameter(name, msg->data));
 }
 
