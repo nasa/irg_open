@@ -3,8 +3,7 @@
 
 #include <QString>
 #include <QStringList>
-
-#include "rclcpp/rclcpp.hpp"
+#include <rclcpp/rclcpp.hpp>
 
 namespace irg_rqt_tools {
 

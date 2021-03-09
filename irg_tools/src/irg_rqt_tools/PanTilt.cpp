@@ -1,12 +1,10 @@
 #include "PanTilt.h"
 
 #include <pluginlib/class_list_macros.hpp>
-
-#include "std_msgs/msg/float64.h"
-
 #include <QComboBox>
 #include <QPushButton>
 #include <QStringList>
+#include <std_msgs/msg/float64.h>
 
 #include "Utils.h"
 
