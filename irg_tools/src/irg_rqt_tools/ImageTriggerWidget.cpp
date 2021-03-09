@@ -1,6 +1,6 @@
 #include "ImageTriggerWidget.h"
 
-#include "std_msgs/msg/empty.hpp"
+#include <std_msgs/msg/empty.hpp>
 
 using namespace irg_rqt_tools;
 
@@ -17,7 +17,7 @@ ImageTriggerWidget::ImageTriggerWidget(rclcpp::Node::SharedPtr node, QString top
   QString triggerText = "/image_trigger";
   triggerBut->setText(topic.remove(triggerText));
   
-  // hide options button because we don't have any options yet
+  // Hide options button because we don't have any options yet
   optionsBut->hide();
 }
 
