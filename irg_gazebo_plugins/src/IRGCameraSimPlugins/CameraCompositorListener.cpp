@@ -45,25 +45,21 @@ CameraCompositorListener::CameraCompositorListener(sdf::ElementPtr sdf)
   }
 
   // Declare shader param names and default values
-  initParam("exposure", 1.0);
-  initParam("energy_conversion", 1.0);
-  initParam("read_noise", 0.64);
-  initParam("shot_noise", 0.09);
-  initParam("gain", 1.0);
-  initParam("gamma", 1.0);
-  initParam("adc_bits", 12.0);
-
-  // Get new values from the sdf element
-  for (auto& p : m_param_map)
-  {
-    if (sdf->HasElement(p.first)) {
-      p.second.m_value = sdf->Get<Ogre::Real>(p.first);
-    }
-  }
+  initParam(sdf, "exposure", 1.0);
+  initParam(sdf, "energy_conversion", 1.0);
+  initParam(sdf, "read_noise", 0.64);
+  initParam(sdf, "shot_noise", 0.09);
+  initParam(sdf, "gain", 1.0);
+  initParam(sdf, "gamma", 1.0);
+  initParam(sdf, "adc_bits", 12.0);
 }
 
-void CameraCompositorListener::initParam(const std::string& name, const double initial_value)
+void CameraCompositorListener::initParam(sdf::ElementPtr sdf, const std::string& name, double initial_value)
 {
+  if (sdf->HasElement(name)) {
+    initial_value = sdf->Get<Ogre::Real>(name);
+  }
+
   m_param_map[name].m_value = initial_value;
 
   // create topic name
