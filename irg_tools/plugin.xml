@@ -1,4 +1,20 @@
 <library path="irg_rqt_tools">
+  <class name="irg_rqt_tools/CameraConfig" type="irg_rqt_tools::CameraConfig" base_class_type="rqt_gui_cpp::Plugin">
+    <description>
+      Configure camera settings
+    </description>
+    <qtgui>
+      <group>
+        <label>Robot Tools</label>
+        <icon type="theme">folder</icon>
+        <statustip>Plugins related to robot tools</statustip>
+      </group>
+      <label>[irg] Camera Configuration</label>
+      <icon type="theme">camera-photo</icon>
+      <statustip>Configure camera settings</statustip>
+    </qtgui>
+  </class>
+
   <class name="irg_rqt_tools/ImageTrigger" type="irg_rqt_tools::ImageTrigger" base_class_type="rqt_gui_cpp::Plugin">
     <description>
       Buttons to trigger image capture
