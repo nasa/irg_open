@@ -1,36 +1,36 @@
 #include "ImageTriggerWidget.h"
 
-#include <std_msgs/Empty.h>
+#include <std_msgs/msg/empty.hpp>
 
 using namespace irg_rqt_tools;
 
-ImageTriggerWidget::ImageTriggerWidget(ros::NodeHandle& nodeHandle, QString topic, QWidget* parent)
-  : 
-  QWidget(parent)
+ImageTriggerWidget::ImageTriggerWidget(rclcpp::Node::SharedPtr node, QString topic, QWidget* parent)
+  : QWidget(parent)
 {
   setupUi(this);
-  QMetaObject::connectSlotsByName(this);
-  m_publisher = nodeHandle.advertise<std_msgs::Empty>(topic.toStdString(), 1000);
-  
+
+  rclcpp::QoS qos(10);
+  qos.reliable();
+
+  m_publisher = node->create_publisher<std_msgs::msg::Empty>(topic.toStdString(), qos);
+
   QString triggerText = "/image_trigger";
   triggerBut->setText(topic.remove(triggerText));
   
-  // hide options button because we don't have any options yet
+  // Hide options button because we don't have any options yet
   optionsBut->hide();
 }
 
 ImageTriggerWidget::~ImageTriggerWidget() 
 {
-  m_publisher.shutdown();
 }
 
 void ImageTriggerWidget::on_triggerBut_clicked()
 {
-  std_msgs::Empty msg;
-  m_publisher.publish(msg);
+  std_msgs::msg::Empty msg;
+  m_publisher->publish(msg);
 }
 
 void ImageTriggerWidget::on_optionsBut_clicked()
 {
-  ROS_INFO("Options button clicked");
 }

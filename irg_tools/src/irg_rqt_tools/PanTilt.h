@@ -1,8 +1,9 @@
 #ifndef irg_rqt_tools_PanTilt_h
 #define irg_rqt_tools_PanTilt_h
 
-#include <rqt_gui_cpp/plugin.h>
-#include <ros/ros.h>
+#include "rqt_gui_cpp/plugin.h"
+#include "rclcpp/rclcpp.hpp"
+#include "std_msgs/msg/float64.hpp"
 
 #include <QList>
 #include <QTime>
@@ -51,17 +52,15 @@ namespace irg_rqt_tools {
     virtual void selectTopic(const QString& topic, QComboBox* combo);
 
   protected:
-
     Ui::PanTiltWidget m_ui;
     QWidget*          m_widget;
-    
-    ros::Publisher    m_panPublisher;
-    ros::Publisher    m_tiltPublisher;
-    
     QTime             m_panValueTime;
     QTime             m_tiltValueTime;
     double            m_panValueDefault;
     double            m_tiltValueDefault;
+
+    rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr m_panPublisher;
+    rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr m_tiltPublisher;
   };
 }
 

@@ -3,13 +3,13 @@
 
 #include <QString>
 #include <QStringList>
+#include <rclcpp/rclcpp.hpp>
 
 namespace irg_rqt_tools {
 
   class Utils {
   public:
-    static QStringList getAllTopics(const QString& messageType);
-    static QStringList getPublishedTopics(const QString& messageType);
+    static QStringList getAllTopics(rclcpp::Node::SharedPtr node, const QString& messageType);
   };
 
 }
