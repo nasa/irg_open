@@ -1,13 +1,10 @@
 #include "PanTilt.h"
 
-#include <pluginlib/class_list_macros.h>
-#include <ros/master.h>
-
-#include <std_msgs/Float64.h>
-
+#include <pluginlib/class_list_macros.hpp>
 #include <QComboBox>
 #include <QPushButton>
 #include <QStringList>
+#include <std_msgs/msg/float64.h>
 
 #include "Utils.h"
 
@@ -65,11 +62,9 @@ namespace irg_rqt_tools {
 
   void PanTilt::shutdownPlugin()
   {
-    m_panPublisher.shutdown();
-    m_tiltPublisher.shutdown();
   }
 
-  void PanTilt::saveSettings(qt_gui_cpp::Settings& plugin_settings, qt_gui_cpp::Settings& instance_settings) const
+  void PanTilt::saveSettings(qt_gui_cpp::Settings& /*plugin_settings*/, qt_gui_cpp::Settings& instance_settings) const
   {
     QString panTopic  = m_ui.panTopicCombo->currentText();
     double  panMin    = m_ui.panMinSpin->value();
@@ -86,7 +81,6 @@ namespace irg_rqt_tools {
     instance_settings.setValue("tiltMin",   tiltMin);
     instance_settings.setValue("tiltMax",   tiltMax);
     instance_settings.setValue("tiltDefault", m_tiltValueDefault);
-    
   }
 
   // we say 3 seconds here even though the timer is set to 2 seconds... 
@@ -96,12 +90,14 @@ namespace irg_rqt_tools {
     button->setToolTip(tt);
   }
   
-  void PanTilt::restoreSettings(const qt_gui_cpp::Settings& plugin_settings, const qt_gui_cpp::Settings& instance_settings)
+  void PanTilt::restoreSettings(const qt_gui_cpp::Settings& /*plugin_settings*/, const qt_gui_cpp::Settings& instance_settings)
   {
     QString panTopic  = instance_settings.value("panTopic", "").toString();
     QString tiltTopic = instance_settings.value("tiltTopic", "").toString();
+
     selectTopic(panTopic, m_ui.panTopicCombo);
     selectTopic(tiltTopic, m_ui.tiltTopicCombo);
+
     double panMin  = instance_settings.value("panMin",  -3.14).toDouble();
     double panMax  = instance_settings.value("panMax",   3.14).toDouble();
     double tiltMin = instance_settings.value("tiltMin", -1.57).toDouble();
@@ -134,10 +130,10 @@ namespace irg_rqt_tools {
     m_ui.tiltTopicCombo->clear();
     
     QStringList topicList;
-    QStringList topics = Utils::getAllTopics("std_msgs/Float64");
+    QStringList topics = Utils::getAllTopics(node_, "std_msgs/msg/Float64");
     topics.append("");
     qSort(topics);
-    for (QStringList::const_iterator it = topics.begin(); it != topics.end(); it++) {
+    for(QStringList::const_iterator it = topics.begin(); it != topics.end(); it++) {
       QString label(*it);
       label.replace(" ", "/");
       m_ui.panTopicCombo->addItem(label, QVariant(*it));
@@ -147,21 +143,17 @@ namespace irg_rqt_tools {
 
     if(panTopic.isEmpty()) {
       for(int i = 0; i < topicList.count(); i++) {
-        if(!topicList[i].contains("/delayed/")) {
-          if(topicList[i].contains("pan")) {
-            panTopic = topicList[i];
-            break;
-          }
+        if(topicList[i].contains("pan")) {
+          panTopic = topicList[i];
+          break;
         }
       }
     }
     if(tiltTopic.isEmpty()) {
       for(int i = 0; i < topicList.count(); i++) {
-        if(!topicList[i].contains("/delayed/")) {
-          if(topicList[i].contains("tilt")) {
-            tiltTopic = topicList[i];
-            break;
-          }
+        if(topicList[i].contains("tilt")) {
+          tiltTopic = topicList[i];
+          break;
         }
       }
     }
@@ -173,8 +165,7 @@ namespace irg_rqt_tools {
   void PanTilt::selectTopic(const QString& topic, QComboBox* combo)
   {
     int index = combo->findText(topic);
-    if (index == -1)
-    {
+    if (index == -1) {
       // add topic name to list if not yet in
       QString label(topic);
       label.replace(" ", "/");
@@ -184,36 +175,44 @@ namespace irg_rqt_tools {
     combo->setCurrentIndex(index);
   }
 
-  void PanTilt::onPanTopicChanged(int index)
+  void PanTilt::onPanTopicChanged(int /*index*/)
   {
-    m_panPublisher.shutdown();
     std::string topicName = m_ui.panTopicCombo->currentText().toStdString();
-    m_panPublisher = getNodeHandle().advertise<std_msgs::Float64>(topicName, 1000);
-    m_ui.panTopicCombo->setToolTip(topicName.c_str());
+    if(topicName.empty()) {
+      m_panPublisher.reset();
+    } else {
+      m_panPublisher = node_->create_publisher<std_msgs::msg::Float64>(topicName, 1000);
+      m_ui.panTopicCombo->setToolTip(topicName.c_str());
+    }
   }
 
-  void PanTilt::onTiltTopicChanged(int index) {
-    m_tiltPublisher.shutdown();
+  void PanTilt::onTiltTopicChanged(int /*index*/) {
     std::string topicName = m_ui.tiltTopicCombo->currentText().toStdString();
-    m_tiltPublisher = getNodeHandle().advertise<std_msgs::Float64>(topicName, 1000);
-    m_ui.tiltTopicCombo->setToolTip(topicName.c_str());
+    if(topicName.empty()) {
+      m_tiltPublisher.reset();
+    } else {
+      m_ui.tiltTopicCombo->setToolTip(topicName.c_str());
+      m_tiltPublisher = node_->create_publisher<std_msgs::msg::Float64>(topicName, 1000);
+    }
   }
 
   void PanTilt::onPanValueChanged(int value) {
-    if(!m_panPublisher.getTopic().empty()) {
-      std_msgs::Float64 msg;
-      msg.data = 0.01 * value;
-      m_panPublisher.publish(msg);
-      m_ui.panValueBut->setText("Pan " + QString::number(msg.data));
+    std_msgs::msg::Float64 msg;
+    msg.data = 0.01 * value;
+    m_ui.panValueBut->setText("Pan " + QString::number(msg.data));
+
+    if(m_panPublisher) {
+      m_panPublisher->publish(msg);
     }
   }
 
   void PanTilt::onTiltValueChanged(int value) {
-    if(!m_tiltPublisher.getTopic().empty()) {
-      std_msgs::Float64 msg;
-      msg.data = 0.01 * value;
-      m_tiltPublisher.publish(msg);
-      m_ui.tiltValueBut->setText("Tilt " + QString::number(msg.data));
+    std_msgs::msg::Float64 msg;
+    msg.data = 0.01 * value;
+    m_ui.tiltValueBut->setText("Tilt " + QString::number(msg.data));
+
+    if(m_tiltPublisher) {
+      m_tiltPublisher->publish(msg);
     }
   }
 

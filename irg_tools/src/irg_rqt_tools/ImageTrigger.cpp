@@ -2,8 +2,7 @@
 
 #include <cmath>
 
-#include <pluginlib/class_list_macros.h>
-#include <ros/master.h>
+#include <pluginlib/class_list_macros.hpp>
 
 #include <QComboBox>
 #include <QPushButton>
@@ -47,11 +46,11 @@ namespace irg_rqt_tools
   {
   }
 
-  void ImageTrigger::saveSettings(qt_gui_cpp::Settings& plugin_settings, qt_gui_cpp::Settings& instance_settings) const
+  void ImageTrigger::saveSettings(qt_gui_cpp::Settings& /*plugin_settings*/, qt_gui_cpp::Settings& /*instance_settings*/) const
   {
   }
 
-  void ImageTrigger::restoreSettings(const qt_gui_cpp::Settings& plugin_settings, const qt_gui_cpp::Settings& instance_settings)
+  void ImageTrigger::restoreSettings(const qt_gui_cpp::Settings& /*plugin_settings*/, const qt_gui_cpp::Settings& /*instance_settings*/)
   {
   }
   
@@ -64,20 +63,16 @@ namespace irg_rqt_tools
     }
     QStringList triggerTopics = getTriggerTopics();
     for(int i = 0; i < triggerTopics.count(); i++) {
-      ImageTriggerWidget* itw = new ImageTriggerWidget(getNodeHandle(), triggerTopics[i]);
+      ImageTriggerWidget* itw = new ImageTriggerWidget(node_, triggerTopics[i]);
       m_ui.triggerLayout->addWidget(itw);
     }
     QSpacerItem* spacer = new QSpacerItem(20, 40, QSizePolicy::Minimum, QSizePolicy::Expanding);
     m_ui.triggerLayout->addItem(spacer);
   }
 
-
-  /**
-   *
-   */
   QStringList ImageTrigger::getTriggerTopics()
   {
-    QStringList emptyTopics = Utils::getAllTopics("std_msgs/Empty");
+    QStringList emptyTopics = Utils::getAllTopics(node_, "std_msgs/msg/Empty");
     QStringList triggerTopics;
     for(int i = 0; i < emptyTopics.count(); i++) {
       if(emptyTopics[i].contains("image_trigger")) {

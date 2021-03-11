@@ -1,4 +1,4 @@
-<library path="lib/libirg_rqt_tools">
+<library path="irg_rqt_tools">
   <class name="irg_rqt_tools/ImageTrigger" type="irg_rqt_tools::ImageTrigger" base_class_type="rqt_gui_cpp::Plugin">
     <description>
       Buttons to trigger image capture

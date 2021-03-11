@@ -1,8 +1,9 @@
 #ifndef irg_rqt_tools_ImageTriggerWidget_h
 #define irg_rqt_tools_ImageTriggerWidget_h
 
-#include <ros/ros.h>
+#include "rclcpp/rclcpp.hpp"
 #include "ui_ImageTriggerWidget.h"
+#include "std_msgs/msg/empty.hpp"
 
 namespace irg_rqt_tools {
   
@@ -10,7 +11,7 @@ namespace irg_rqt_tools {
   {
     Q_OBJECT
   public:
-    ImageTriggerWidget(ros::NodeHandle& nodeHandle, QString topic, QWidget* parent = 0);
+    ImageTriggerWidget(rclcpp::Node::SharedPtr node, QString topic, QWidget* parent = 0);
     ~ImageTriggerWidget();
 
   protected slots:
@@ -18,9 +19,8 @@ namespace irg_rqt_tools {
     void on_optionsBut_clicked();
     
   protected:
-    ros::Publisher    m_publisher;
+    rclcpp::Publisher<std_msgs::msg::Empty>::SharedPtr m_publisher;
   };
-
   
 }
 
