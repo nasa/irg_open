@@ -1,6 +1,7 @@
 #include "CameraConfig.h"
 
 #include <chrono>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -152,12 +153,25 @@ namespace irg_rqt_tools {
         "shot_noise"
       });
 
-    auto result = rclcpp::executors::spin_node_until_future_complete(m_executor, m_paramClientNode, future, 2s);
+    auto result = rclcpp::executors::spin_node_until_future_complete(m_executor,
+                                                                     m_paramClientNode,
+                                                                     future,
+                                                                     m_serviceTimeout);
 
     if (result != rclcpp::FutureReturnCode::SUCCESS) {
-      QString errMsg("Failed to get parameters for camera: ");
-      displayError(errMsg + cameraName);
-      return;
+      // Occasionally, the get_parameter call fails at start-up because the node were using
+      // for the service calls (which can't already be spinning) is not completely initialized
+      // with full discovery information. So, give it one retry. This seems to work better
+      // than extending the timeout
+      result = rclcpp::executors::spin_node_until_future_complete(m_executor,
+                                                                  m_paramClientNode,
+                                                                  future,
+                                                                  m_serviceTimeout);
+      if (result != rclcpp::FutureReturnCode::SUCCESS) {
+        QString errMsg("Failed to get parameters for camera: ");
+        displayError(errMsg + cameraName);
+        return;
+      }
     }
 
     auto parameters = future.get();
@@ -209,7 +223,10 @@ namespace irg_rqt_tools {
         rclcpp::Parameter("shot_noise", m_defaultShotNoise.toDouble())
       });
 
-    auto result = rclcpp::executors::spin_node_until_future_complete(m_executor, m_paramClientNode, future, 2s);
+    auto result = rclcpp::executors::spin_node_until_future_complete(m_executor,
+                                                                     m_paramClientNode,
+                                                                     future,
+                                                                     m_serviceTimeout);
 
     if (result != rclcpp::FutureReturnCode::SUCCESS) {
       displayError("Failed to restore default parameter values");
@@ -266,6 +283,13 @@ namespace irg_rqt_tools {
     ParametersClient parametersClient;
     parametersClient.m_parametersClient = std::make_shared<rclcpp::AsyncParametersClient>(m_paramClientNode, cameraName.toStdString());
 
+    // As we add the service clients, make sure the services are ready
+    if (!parametersClient.m_parametersClient->wait_for_service(m_serviceTimeout)) {
+      QString errMsg("Parameter service not found for camera: ");
+      displayError(errMsg + cameraName);
+      return;
+    }
+
     QVariant associatedData;
     associatedData.setValue(parametersClient);
 
@@ -307,7 +331,10 @@ namespace irg_rqt_tools {
         rclcpp::Parameter(paramName.toStdString(), value)
       });
 
-    auto result = rclcpp::executors::spin_node_until_future_complete(m_executor, m_paramClientNode, future, 2s);
+    auto result = rclcpp::executors::spin_node_until_future_complete(m_executor,
+                                                                     m_paramClientNode,
+                                                                     future,
+                                                                     m_serviceTimeout);
 
     if (result != rclcpp::FutureReturnCode::SUCCESS) {
       displayError("Failed to set camera parameter");

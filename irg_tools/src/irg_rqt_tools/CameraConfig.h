@@ -67,6 +67,9 @@ namespace irg_rqt_tools {
     // The executor on which to make the parameter service calls
     rclcpp::executors::SingleThreadedExecutor m_executor;
 
+    // The timeout to use on parameter-related service calls
+    std::chrono::seconds m_serviceTimeout{1};
+
     // Parameter default values in case the user wants to restore back to default settings
     static const QString m_defaultADCBits;
     static const QString m_defaultEnergyConversion;
