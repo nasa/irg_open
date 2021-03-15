@@ -3,6 +3,7 @@
 
 #include <memory>
 
+#include <QLineEdit>
 #include <QString>
 #include <QWidget>
 #include <rclcpp/rclcpp.hpp>
@@ -45,6 +46,7 @@ namespace irg_rqt_tools {
   protected:
     void addCamera(const QString& cameraName);
     void displayError(const QString& errorMsg, QString detailedInfo = "");
+    double getValueFromLineEdit(QLineEdit *lineEdit);
     void selectCamera(const QString& cameraName);
     void setDoubleParameter(const QString& param_name, double value);
     void updateCameraList();
