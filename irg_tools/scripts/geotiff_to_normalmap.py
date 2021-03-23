@@ -37,7 +37,7 @@ def main():
     sys.exit(1)
 
   heights = band.ReadAsArray().astype(numpy.float)
-  normals = numpy.empty((num_cols, num_rows, 3),dtype=numpy.uint8)
+  normals = numpy.empty((num_rows, num_cols, 3),dtype=numpy.uint8)
 
   percent = 0
   for i in range(0, num_rows-1):
