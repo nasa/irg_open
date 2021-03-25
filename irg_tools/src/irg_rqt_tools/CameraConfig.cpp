@@ -26,6 +26,14 @@ Q_DECLARE_METATYPE(ParametersClient)
 
 namespace irg_rqt_tools {
 
+const char *CameraConfig::m_nameADCBits = "adc_bits";
+const char *CameraConfig::m_nameEnergyConversion = "energy_conversion";
+const char *CameraConfig::m_nameExposure = "exposure";
+const char *CameraConfig::m_nameGain = "gain";
+const char *CameraConfig::m_nameGamma = "gamma";
+const char *CameraConfig::m_nameReadNoise = "read_noise";
+const char *CameraConfig::m_nameShotNoise = "shot_noise";
+
 const QString CameraConfig::m_defaultADCBits = "12.0";
 const QString CameraConfig::m_defaultEnergyConversion = "1.0";
 const QString CameraConfig::m_defaultExposure = "1.0";
@@ -144,13 +152,13 @@ void CameraConfig::onRestoreDefaultsClicked()
 {
   auto future = m_currentCamera->set_parameters(
     {
-      rclcpp::Parameter("adc_bits", m_defaultADCBits.toDouble()),
-      rclcpp::Parameter("energy_conversion", m_defaultEnergyConversion.toDouble()),
-      rclcpp::Parameter("exposure", m_defaultExposure.toDouble()),
-      rclcpp::Parameter("gain", m_defaultGain.toDouble()),
-      rclcpp::Parameter("gamma", m_defaultGamma.toDouble()),
-      rclcpp::Parameter("read_noise", m_defaultReadNoise.toDouble()),
-      rclcpp::Parameter("shot_noise", m_defaultShotNoise.toDouble())
+      rclcpp::Parameter(m_nameADCBits, m_defaultADCBits.toDouble()),
+      rclcpp::Parameter(m_nameEnergyConversion, m_defaultEnergyConversion.toDouble()),
+      rclcpp::Parameter(m_nameExposure, m_defaultExposure.toDouble()),
+      rclcpp::Parameter(m_nameGain, m_defaultGain.toDouble()),
+      rclcpp::Parameter(m_nameGamma, m_defaultGamma.toDouble()),
+      rclcpp::Parameter(m_nameReadNoise, m_defaultReadNoise.toDouble()),
+      rclcpp::Parameter(m_nameShotNoise, m_defaultShotNoise.toDouble())
     });
 
   auto result = rclcpp::executors::spin_node_until_future_complete(m_executor,
@@ -211,37 +219,37 @@ void CameraConfig::updateLineEdit(const char *paramName, CustomLineEdit *lineEdi
 
 void CameraConfig::onADCFocusChange(bool hasFocus)
 {
-  updateLineEdit("adc_bits", m_ui.adc_bits_edit, hasFocus);
+  updateLineEdit(m_nameADCBits, m_ui.adc_bits_edit, hasFocus);
 }
 
 void CameraConfig::onEnergyConversionFocusChange(bool hasFocus)
 {
-  updateLineEdit("energy_conversion", m_ui.energy_conversion_edit, hasFocus);
+  updateLineEdit(m_nameEnergyConversion, m_ui.energy_conversion_edit, hasFocus);
 }
 
 void CameraConfig::onExposureFocusChange(bool hasFocus)
 {
-  updateLineEdit("exposure", m_ui.exposure_edit, hasFocus);
+  updateLineEdit(m_nameExposure, m_ui.exposure_edit, hasFocus);
 }
 
 void CameraConfig::onGainFocusChange(bool hasFocus)
 {
-  updateLineEdit("gain", m_ui.gain_edit, hasFocus);
+  updateLineEdit(m_nameGain, m_ui.gain_edit, hasFocus);
 }
 
 void CameraConfig::onGammaFocusChange(bool hasFocus)
 {
-  updateLineEdit("gamma", m_ui.gamma_edit, hasFocus);
+  updateLineEdit(m_nameGamma, m_ui.gamma_edit, hasFocus);
 }
 
 void CameraConfig::onReadNoiseFocusChange(bool hasFocus)
 {
-  updateLineEdit("read_noise", m_ui.read_noise_edit, hasFocus);
+  updateLineEdit(m_nameReadNoise, m_ui.read_noise_edit, hasFocus);
 }
 
 void CameraConfig::onShotNoiseFocusChange(bool hasFocus)
 {
-  updateLineEdit("shot_noise", m_ui.shot_noise_edit, hasFocus);
+  updateLineEdit(m_nameShotNoise, m_ui.shot_noise_edit, hasFocus);
 }
 
 void CameraConfig::addCamera(const QString& cameraName)
@@ -266,13 +274,13 @@ void CameraConfig::getAllParameters()
 {
   auto future = m_currentCamera->get_parameters(
     {
-      "adc_bits",
-      "energy_conversion",
-      "exposure",
-      "gain",
-      "gamma",
-      "read_noise",
-      "shot_noise"
+      m_nameADCBits,
+      m_nameEnergyConversion,
+      m_nameExposure,
+      m_nameGain,
+      m_nameGamma,
+      m_nameReadNoise,
+      m_nameShotNoise
     });
 
   auto result = rclcpp::executors::spin_node_until_future_complete(m_executor,
@@ -302,19 +310,19 @@ void CameraConfig::getAllParameters()
     auto value = QString::fromStdString(parameter.value_to_string());
     stripTrailingZeros(value);
 
-    if (parameter.get_name() == "adc_bits") {
+    if (parameter.get_name() == m_nameADCBits) {
       m_ui.adc_bits_edit->setText(value);
-    } else if (parameter.get_name() == "energy_conversion") {
+    } else if (parameter.get_name() == m_nameEnergyConversion) {
       m_ui.energy_conversion_edit->setText(value);
-    } else if (parameter.get_name() == "exposure") {
+    } else if (parameter.get_name() == m_nameExposure) {
       m_ui.exposure_edit->setText(value);
-    } else if (parameter.get_name() == "gain") {
+    } else if (parameter.get_name() == m_nameGain) {
       m_ui.gain_edit->setText(value);
-    } else if (parameter.get_name() == "gamma") {
+    } else if (parameter.get_name() == m_nameGamma) {
       m_ui.gamma_edit->setText(value);
-    } else if (parameter.get_name() == "read_noise") {
+    } else if (parameter.get_name() == m_nameReadNoise) {
       m_ui.read_noise_edit->setText(value);
-    } else if (parameter.get_name() == "shot_noise") {
+    } else if (parameter.get_name() == m_nameShotNoise) {
       m_ui.shot_noise_edit->setText(value);
     }
   }

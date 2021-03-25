@@ -78,6 +78,15 @@ protected:
   // The timeout to use on parameter-related service calls
   std::chrono::seconds m_serviceTimeout{1};
 
+  // Parameter names to avoid multiple occurances of the same string literals
+  static const char *m_nameADCBits;
+  static const char *m_nameEnergyConversion;
+  static const char *m_nameExposure;
+  static const char *m_nameGain;
+  static const char *m_nameGamma;
+  static const char *m_nameReadNoise;
+  static const char *m_nameShotNoise;
+
   // Parameter default values in case the user wants to restore back to default settings
   static const QString m_defaultADCBits;
   static const QString m_defaultEnergyConversion;
@@ -87,7 +96,7 @@ protected:
   static const QString m_defaultReadNoise;
   static const QString m_defaultShotNoise;
 
-  // The max number of digits past the decimal to show in the edit control
+  // The max number of digits past the decimal to show in the edit controls
   static const int m_significantDigits;
 };
 
