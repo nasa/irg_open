@@ -19,14 +19,7 @@ CameraCompositorListener::CameraCompositorListener(sdf::ElementPtr sdf)
     result.successful = true;
     for (const auto & rosparam : rosparams) {
       const std::string& rosparam_name = rosparam.get_name();
-      if (m_param_map.find(rosparam_name) == m_param_map.end()) {
-        result.successful = false;
-        std::stringstream ss;
-        ss << "Unrecognized ROS param: " << rosparam_name;
-        result.reason = ss.str();
-        gzwarn << ss.str() << std::endl;
-      }
-      else {
+      if (m_param_map.find(rosparam_name) != m_param_map.end()) {
         m_param_map[rosparam_name].m_value =
             static_cast<Ogre::Real>(rosparam.as_double());
       }
