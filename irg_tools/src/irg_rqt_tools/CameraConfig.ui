@@ -477,6 +477,9 @@
          <height>0</height>
         </size>
        </property>
+       <property name="toolTip">
+        <string>Get all parameter values from the current camera</string>
+       </property>
        <property name="text">
         <string>Get All Parameters</string>
        </property>
@@ -497,7 +500,7 @@
         </size>
        </property>
        <property name="toolTip">
-        <string>Restore default camera parameter values</string>
+        <string>Restore default camera parameter values (these may differ from initial values due to launch file overrides)</string>
        </property>
        <property name="text">
         <string>Restore Default Values</string>
