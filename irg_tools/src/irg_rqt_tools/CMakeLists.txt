@@ -2,6 +2,7 @@ set(TARGET irg_rqt_tools)
 
 set(SOURCES
   CameraConfig.cpp
+  CustomLineEdit.cpp
   ImageTrigger.cpp
   ImageTriggerWidget.cpp
   PanTilt.cpp
@@ -10,6 +11,7 @@ set(SOURCES
 
 set(HEADERS
   CameraConfig.h
+  CustomLineEdit.h
   ImageTrigger.h
   ImageTriggerWidget.h
   PanTilt.h
@@ -18,6 +20,7 @@ set(HEADERS
 
 set(MOC_HEADERS
   CameraConfig.h
+  CustomLineEdit.h
   ImageTrigger.h
   ImageTriggerWidget.h
   PanTilt.h
@@ -41,6 +44,7 @@ include_directories(
 set(QT_LINK_LIBRARIES Qt5::Widgets)
 
 include_directories(
+  ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_BINARY_DIR}
 )
 

@@ -10,6 +10,7 @@
 #include <rqt_gui_cpp/plugin.h>
 
 #include "ui_CameraConfig.h"
+#include "CustomLineEdit.h"
 
 namespace irg_rqt_tools {
 
@@ -32,24 +33,31 @@ protected slots:
   // Response to a change in the Camera dropdown list
   virtual void onCameraChanged(int index);
 
-  // Responses to the various button clicks
+  // Responses to various button clicks
   virtual void onRefreshCamerasClicked();
   virtual void onRestoreDefaultsClicked();
-  virtual void onSetADCClicked();
-  virtual void onSetEnergyConversionClicked();
-  virtual void onSetExposureClicked();
-  virtual void onSetGainClicked();
-  virtual void onSetGammaClicked();
-  virtual void onSetReadNoiseClicked();
-  virtual void onSetShotNoiseClicked();
+  virtual void onGetAllParametersClicked();
+
+  // Responses to edit control focus changes
+  virtual void onADCFocusChange(bool hasFocus);
+  virtual void onEnergyConversionFocusChange(bool hasFocus);
+  virtual void onExposureFocusChange(bool hasFocus);
+  virtual void onGainFocusChange(bool hasFocus);
+  virtual void onGammaFocusChange(bool hasFocus);
+  virtual void onReadNoiseFocusChange(bool hasFocus);
+  virtual void onShotNoiseFocusChange(bool hasFocus);
 
 protected:
   void addCamera(const QString& cameraName);
   void displayError(const QString& errorMsg, QString detailedInfo = "");
+  void getAllParameters();
+  bool getDoubleParameter(const QString& param_name, double *value);
   double getValueFromLineEdit(QLineEdit *lineEdit);
   void selectCamera(const QString& cameraName);
   void setDoubleParameter(const QString& param_name, double value);
+  void stripTrailingZeros(QString& s);
   void updateCameraList();
+  void updateLineEdit(const char *paramName, CustomLineEdit *lineEdit, bool hasFocus);
 
 protected:
   // The UI that results from reading the .ui file
@@ -78,6 +86,9 @@ protected:
   static const QString m_defaultGamma;
   static const QString m_defaultReadNoise;
   static const QString m_defaultShotNoise;
+
+  // The max number of digits past the decimal to show in the edit control
+  static const int m_significantDigits;
 };
 
 }

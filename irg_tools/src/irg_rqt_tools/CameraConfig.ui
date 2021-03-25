@@ -7,7 +7,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>460</width>
+    <width>410</width>
     <height>444</height>
    </rect>
   </property>
@@ -161,7 +161,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QLineEdit" name="exposure_edit">
+          <widget class="CustomLineEdit" name="exposure_edit">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -179,19 +179,6 @@
              <width>90</width>
              <height>16777215</height>
             </size>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QToolButton" name="set_exposure_button">
-           <property name="toolTip">
-            <string>Set camera exposure</string>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-           <property name="autoRaise">
-            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -216,7 +203,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QLineEdit" name="energy_conversion_edit">
+          <widget class="CustomLineEdit" name="energy_conversion_edit">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -234,19 +221,6 @@
              <width>90</width>
              <height>16777215</height>
             </size>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QToolButton" name="set_energy_conversion_button">
-           <property name="toolTip">
-            <string>Set energy conversion factor</string>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-           <property name="autoRaise">
-            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -271,7 +245,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QLineEdit" name="read_noise_edit">
+          <widget class="CustomLineEdit" name="read_noise_edit">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -289,19 +263,6 @@
              <width>90</width>
              <height>16777215</height>
             </size>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QToolButton" name="set_read_noise_button">
-           <property name="toolTip">
-            <string>Set read noise coefficient</string>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-           <property name="autoRaise">
-            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -326,7 +287,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QLineEdit" name="shot_noise_edit">
+          <widget class="CustomLineEdit" name="shot_noise_edit">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -344,19 +305,6 @@
              <width>90</width>
              <height>16777215</height>
             </size>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QToolButton" name="set_shot_noise_button">
-           <property name="toolTip">
-            <string>Set shot noise coefficient</string>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-           <property name="autoRaise">
-            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -381,7 +329,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QLineEdit" name="gain_edit">
+          <widget class="CustomLineEdit" name="gain_edit">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -399,19 +347,6 @@
              <width>90</width>
              <height>16777215</height>
             </size>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QToolButton" name="set_gain_button">
-           <property name="toolTip">
-            <string>Set sensor gain</string>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-           <property name="autoRaise">
-            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -436,7 +371,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QLineEdit" name="gamma_edit">
+          <widget class="CustomLineEdit" name="gamma_edit">
            <property name="minimumSize">
             <size>
              <width>75</width>
@@ -448,19 +383,6 @@
              <width>90</width>
              <height>16777215</height>
             </size>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QToolButton" name="set_gamma_button">
-           <property name="toolTip">
-            <string>Set gamma value</string>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-           <property name="autoRaise">
-            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -485,7 +407,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QLineEdit" name="adc_bits_edit">
+          <widget class="CustomLineEdit" name="adc_bits_edit">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -503,19 +425,6 @@
              <width>90</width>
              <height>16777215</height>
             </size>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QToolButton" name="set_adc_bits_button">
-           <property name="toolTip">
-            <string>Set bit depth</string>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-           <property name="autoRaise">
-            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -555,6 +464,25 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_9">
      <item>
+      <widget class="QPushButton" name="get_all_parameters_button">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>125</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>Get All Parameters</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QPushButton" name="restore_defaults_button">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -562,11 +490,17 @@
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
+       <property name="minimumSize">
+        <size>
+         <width>125</width>
+         <height>0</height>
+        </size>
+       </property>
        <property name="toolTip">
         <string>Restore default camera parameter values</string>
        </property>
        <property name="text">
-        <string>Restore Defaults</string>
+        <string>Restore Default Values</string>
        </property>
       </widget>
      </item>
@@ -574,6 +508,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>CustomLineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>CustomLineEdit.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

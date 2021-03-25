@@ -10,6 +10,7 @@
 #include <QMessageBox>
 #include <QPushButton>
 
+#include "CustomLineEdit.h"
 #include "Utils.h"
 
 using namespace std::chrono_literals;
@@ -32,6 +33,8 @@ const QString CameraConfig::m_defaultGain = "1.0";
 const QString CameraConfig::m_defaultGamma = "1.0";
 const QString CameraConfig::m_defaultReadNoise = "0.64";
 const QString CameraConfig::m_defaultShotNoise = "0.09";
+
+const int CameraConfig::m_significantDigits = 6;
 
 CameraConfig::CameraConfig() : rqt_gui_cpp::Plugin()
 {
@@ -75,35 +78,22 @@ void CameraConfig::initPlugin(qt_gui_cpp::PluginContext& context)
   m_ui.gamma_edit->setPlaceholderText(m_defaultGamma);
   m_ui.adc_bits_edit->setPlaceholderText(m_defaultADCBits);
 
-  // Set the icons for all of the 'set' and 'scan' buttons
+  // Set the icons for the 'scan' button
   m_ui.refresh_cameras_button->setIcon(QIcon::fromTheme("view-refresh"));
   m_ui.refresh_cameras_button->setText("");
-  m_ui.set_adc_bits_button->setIcon(QIcon::fromTheme("document-save"));
-  m_ui.set_adc_bits_button->setText("");
-  m_ui.set_energy_conversion_button->setIcon(QIcon::fromTheme("document-save"));
-  m_ui.set_energy_conversion_button->setText("");
-  m_ui.set_exposure_button->setIcon(QIcon::fromTheme("document-save"));
-  m_ui.set_exposure_button->setText("");
-  m_ui.set_gain_button->setIcon(QIcon::fromTheme("document-save"));
-  m_ui.set_gain_button->setText("");
-  m_ui.set_gamma_button->setIcon(QIcon::fromTheme("document-save"));
-  m_ui.set_gamma_button->setText("");
-  m_ui.set_read_noise_button->setIcon(QIcon::fromTheme("document-save"));
-  m_ui.set_read_noise_button->setText("");
-  m_ui.set_shot_noise_button->setIcon(QIcon::fromTheme("document-save"));
-  m_ui.set_shot_noise_button->setText("");
 
   // Connect the slots and signals
   connect(m_ui.camera_combo, SIGNAL(currentIndexChanged(int)), this, SLOT(onCameraChanged(int)));
   connect(m_ui.refresh_cameras_button, SIGNAL(clicked()), this, SLOT(onRefreshCamerasClicked()));
   connect(m_ui.restore_defaults_button, SIGNAL(clicked()),  this, SLOT(onRestoreDefaultsClicked()));
-  connect(m_ui.set_adc_bits_button, SIGNAL(clicked()),  this, SLOT(onSetADCClicked()));
-  connect(m_ui.set_energy_conversion_button, SIGNAL(clicked()),  this, SLOT(onSetEnergyConversionClicked()));
-  connect(m_ui.set_exposure_button, SIGNAL(clicked()),  this, SLOT(onSetExposureClicked()));
-  connect(m_ui.set_gain_button, SIGNAL(clicked()),  this, SLOT(onSetGainClicked()));
-  connect(m_ui.set_gamma_button, SIGNAL(clicked()),  this, SLOT(onSetGammaClicked()));
-  connect(m_ui.set_read_noise_button, SIGNAL(clicked()),  this, SLOT(onSetReadNoiseClicked()));
-  connect(m_ui.set_shot_noise_button, SIGNAL(clicked()),  this, SLOT(onSetShotNoiseClicked()));
+  connect(m_ui.get_all_parameters_button, SIGNAL(clicked()),  this, SLOT(onGetAllParametersClicked()));
+  connect(m_ui.adc_bits_edit, SIGNAL(focussed(bool)), this, SLOT(onADCFocusChange(bool)));
+  connect(m_ui.energy_conversion_edit, SIGNAL(focussed(bool)), this, SLOT(onEnergyConversionFocusChange(bool)));
+  connect(m_ui.exposure_edit, SIGNAL(focussed(bool)), this, SLOT(onExposureFocusChange(bool)));
+  connect(m_ui.gain_edit, SIGNAL(focussed(bool)), this, SLOT(onGainFocusChange(bool)));
+  connect(m_ui.gamma_edit, SIGNAL(focussed(bool)), this, SLOT(onGammaFocusChange(bool)));
+  connect(m_ui.read_noise_edit, SIGNAL(focussed(bool)), this, SLOT(onReadNoiseFocusChange(bool)));
+  connect(m_ui.shot_noise_edit, SIGNAL(focussed(bool)), this, SLOT(onShotNoiseFocusChange(bool)));
 
   context.addWidget(m_widget.get());
   updateCameraList();
@@ -123,7 +113,7 @@ void CameraConfig::restoreSettings(const qt_gui_cpp::Settings& /*pluginSettings*
   auto currentCamera = instanceSettings.value("current_camera", "").toString();
 
   // If there is a camera specified in the settings, try to select it in the combo box. If it happens
-  // to not be present, we'll just be left with the default selection
+  // to not be present this time, we'll just use the default selection
   if (!currentCamera.isEmpty()) {
     selectCamera(currentCamera);
   }
@@ -142,67 +132,7 @@ void CameraConfig::onCameraChanged(int index)
   ParametersClient parametersClient = qvariant_cast<ParametersClient>(variant);
   m_currentCamera = parametersClient.m_parametersClient;
 
-  auto future = m_currentCamera->get_parameters(
-    {
-      "adc_bits",
-      "energy_conversion",
-      "exposure",
-      "gain",
-      "gamma",
-      "read_noise",
-      "shot_noise"
-    });
-
-  auto result = rclcpp::executors::spin_node_until_future_complete(m_executor,
-                                                                   m_paramClientNode,
-                                                                   future,
-                                                                   m_serviceTimeout);
-
-  if (result != rclcpp::FutureReturnCode::SUCCESS) {
-    // Occasionally, the get_parameter call fails at start-up because the node we're using
-    // for the service calls (which can't already be spinning) is not completely initialized
-    // with full discovery information. So, give it one retry. This seems to work better
-    // than extending the timeout
-    result = rclcpp::executors::spin_node_until_future_complete(m_executor,
-                                                                m_paramClientNode,
-                                                                future,
-                                                                m_serviceTimeout);
-    if (result != rclcpp::FutureReturnCode::SUCCESS) {
-      QString errMsg("Failed to get parameters for camera: ");
-      displayError(errMsg + cameraName);
-      return;
-    }
-  }
-
-  auto parameters = future.get();
-
-  for (auto & parameter : parameters) {
-    auto value = QString::fromStdString(parameter.value_to_string());
-
-    // Strip any trailing 0s, except for the last one
-    while (value.back() =='0') {
-      value.chop(1);
-    }
-    if (value.back() =='.') {
-      value.append('0');
-    }
-
-    if (parameter.get_name() == "adc_bits") {
-      m_ui.adc_bits_edit->setText(value);
-    } else if (parameter.get_name() == "energy_conversion") {
-      m_ui.energy_conversion_edit->setText(value);
-    } else if (parameter.get_name() == "exposure") {
-      m_ui.exposure_edit->setText(value);
-    } else if (parameter.get_name() == "gain") {
-      m_ui.gain_edit->setText(value);
-    } else if (parameter.get_name() == "gamma") {
-      m_ui.gamma_edit->setText(value);
-    } else if (parameter.get_name() == "read_noise") {
-      m_ui.read_noise_edit->setText(value);
-    } else if (parameter.get_name() == "shot_noise") {
-      m_ui.shot_noise_edit->setText(value);
-    }
-  }
+  getAllParameters();
 }
 
 void CameraConfig::onRefreshCamerasClicked()
@@ -243,39 +173,75 @@ void CameraConfig::onRestoreDefaultsClicked()
   m_ui.shot_noise_edit->setText(m_defaultShotNoise);
 }
 
-void CameraConfig::onSetADCClicked()
+void CameraConfig::onGetAllParametersClicked()
 {
-  setDoubleParameter("adc_bits", getValueFromLineEdit(m_ui.adc_bits_edit));
+  getAllParameters();
 }
 
-void CameraConfig::onSetEnergyConversionClicked()
+void CameraConfig::stripTrailingZeros(QString& s)
 {
-  setDoubleParameter("energy_conversion", getValueFromLineEdit(m_ui.energy_conversion_edit));
+  // Strip any trailing 0s, except for the last one
+  while (s.back() =='0') {
+    s.chop(1);
+  }
+  if (s.back() =='.') {
+    s.append('0');
+  }
 }
 
-void CameraConfig::onSetExposureClicked()
+void CameraConfig::updateLineEdit(const char *paramName, CustomLineEdit *lineEdit, bool hasFocus)
 {
-  setDoubleParameter("exposure", getValueFromLineEdit(m_ui.exposure_edit));
+  if (hasFocus) {
+    // On entry into the edit control, get the current paraemeter value and populate the control
+    double value = 0.0;
+    if (getDoubleParameter(paramName, &value)) {
+      QString strValue = QString::number(value, 'f', m_significantDigits);
+      stripTrailingZeros(strValue);
+      lineEdit->setText(strValue);
+    } else {
+      // If we couldn't get the parameter value, let the user know
+      QString errMsg("Failed to get parameter: ");
+      displayError(errMsg + paramName);
+    }
+  } else {
+    // When leaving the control, set the parameter
+    setDoubleParameter(paramName, getValueFromLineEdit(lineEdit));
+  }
 }
 
-void CameraConfig::onSetGainClicked()
+void CameraConfig::onADCFocusChange(bool hasFocus)
 {
-  setDoubleParameter("gain", getValueFromLineEdit(m_ui.gain_edit));
+  updateLineEdit("adc_bits", m_ui.adc_bits_edit, hasFocus);
 }
 
-void CameraConfig::onSetGammaClicked()
+void CameraConfig::onEnergyConversionFocusChange(bool hasFocus)
 {
-  setDoubleParameter("gamma", getValueFromLineEdit(m_ui.gamma_edit));
+  updateLineEdit("energy_conversion", m_ui.energy_conversion_edit, hasFocus);
 }
 
-void CameraConfig::onSetReadNoiseClicked()
+void CameraConfig::onExposureFocusChange(bool hasFocus)
 {
-  setDoubleParameter("read_noise", getValueFromLineEdit(m_ui.read_noise_edit));
+  updateLineEdit("exposure", m_ui.exposure_edit, hasFocus);
 }
 
-void CameraConfig::onSetShotNoiseClicked()
+void CameraConfig::onGainFocusChange(bool hasFocus)
 {
-  setDoubleParameter("shot_noise", getValueFromLineEdit(m_ui.shot_noise_edit));
+  updateLineEdit("gain", m_ui.gain_edit, hasFocus);
+}
+
+void CameraConfig::onGammaFocusChange(bool hasFocus)
+{
+  updateLineEdit("gamma", m_ui.gamma_edit, hasFocus);
+}
+
+void CameraConfig::onReadNoiseFocusChange(bool hasFocus)
+{
+  updateLineEdit("read_noise", m_ui.read_noise_edit, hasFocus);
+}
+
+void CameraConfig::onShotNoiseFocusChange(bool hasFocus)
+{
+  updateLineEdit("shot_noise", m_ui.shot_noise_edit, hasFocus);
 }
 
 void CameraConfig::addCamera(const QString& cameraName)
@@ -296,6 +262,64 @@ void CameraConfig::addCamera(const QString& cameraName)
   m_ui.camera_combo->addItem(cameraName, associatedData);
 }
 
+void CameraConfig::getAllParameters()
+{
+  auto future = m_currentCamera->get_parameters(
+    {
+      "adc_bits",
+      "energy_conversion",
+      "exposure",
+      "gain",
+      "gamma",
+      "read_noise",
+      "shot_noise"
+    });
+
+  auto result = rclcpp::executors::spin_node_until_future_complete(m_executor,
+                                                                   m_paramClientNode,
+                                                                   future,
+                                                                   m_serviceTimeout);
+
+  if (result != rclcpp::FutureReturnCode::SUCCESS) {
+    // Occasionally, the get_parameter call fails at start-up because the node we're using
+    // for the service calls (which can't already be spinning) is not completely initialized
+    // with full discovery information. So, give it one retry. This seems to work better
+    // than extending the timeout
+    result = rclcpp::executors::spin_node_until_future_complete(m_executor,
+                                                                m_paramClientNode,
+                                                                future,
+                                                                m_serviceTimeout);
+    if (result != rclcpp::FutureReturnCode::SUCCESS) {
+      QString errMsg("Failed to get parameters for camera: ");
+      displayError(errMsg + m_ui.camera_combo->currentText());
+      return;
+    }
+  }
+
+  auto parameters = future.get();
+
+  for (auto & parameter : parameters) {
+    auto value = QString::fromStdString(parameter.value_to_string());
+    stripTrailingZeros(value);
+
+    if (parameter.get_name() == "adc_bits") {
+      m_ui.adc_bits_edit->setText(value);
+    } else if (parameter.get_name() == "energy_conversion") {
+      m_ui.energy_conversion_edit->setText(value);
+    } else if (parameter.get_name() == "exposure") {
+      m_ui.exposure_edit->setText(value);
+    } else if (parameter.get_name() == "gain") {
+      m_ui.gain_edit->setText(value);
+    } else if (parameter.get_name() == "gamma") {
+      m_ui.gamma_edit->setText(value);
+    } else if (parameter.get_name() == "read_noise") {
+      m_ui.read_noise_edit->setText(value);
+    } else if (parameter.get_name() == "shot_noise") {
+      m_ui.shot_noise_edit->setText(value);
+    }
+  }
+}
+
 void CameraConfig::displayError(const QString& errorMsg, QString detailedInfo)
 {
     QMessageBox msgBox(m_widget.get());
@@ -305,6 +329,23 @@ void CameraConfig::displayError(const QString& errorMsg, QString detailedInfo)
       msgBox.setDetailedText(detailedInfo);
     }
     msgBox.exec();
+}
+
+bool CameraConfig::getDoubleParameter(const QString& paramName, double *value)
+{
+  auto future = m_currentCamera->get_parameters({paramName.toStdString()});
+  auto result = rclcpp::executors::spin_node_until_future_complete(m_executor,
+                                                                   m_paramClientNode,
+                                                                   future,
+                                                                   m_serviceTimeout);
+
+  if (result != rclcpp::FutureReturnCode::SUCCESS) {
+    return false;
+  }
+
+  auto parameters = future.get();
+  *value = parameters[0].as_double();
+  return true;
 }
 
 double CameraConfig::getValueFromLineEdit(QLineEdit *lineEdit)
@@ -359,13 +400,7 @@ void CameraConfig::updateCameraList()
       m_ui.gamma_edit->setEnabled(false);
       m_ui.read_noise_edit->setEnabled(false);
       m_ui.restore_defaults_button->setEnabled(false);
-      m_ui.set_adc_bits_button->setEnabled(false);
-      m_ui.set_energy_conversion_button->setEnabled(false);
-      m_ui.set_exposure_button->setEnabled(false);
-      m_ui.set_gain_button->setEnabled(false);
-      m_ui.set_gamma_button->setEnabled(false);
-      m_ui.set_read_noise_button->setEnabled(false);
-      m_ui.set_shot_noise_button->setEnabled(false);
+      m_ui.get_all_parameters_button->setEnabled(false);
       m_ui.shot_noise_edit->setEnabled(false);
   } else {
     for (auto cameraName : cameraNames) {
@@ -379,13 +414,7 @@ void CameraConfig::updateCameraList()
     m_ui.gamma_edit->setEnabled(true);
     m_ui.read_noise_edit->setEnabled(true);
     m_ui.restore_defaults_button->setEnabled(true);
-    m_ui.set_adc_bits_button->setEnabled(true);
-    m_ui.set_energy_conversion_button->setEnabled(true);
-    m_ui.set_exposure_button->setEnabled(true);
-    m_ui.set_gain_button->setEnabled(true);
-    m_ui.set_gamma_button->setEnabled(true);
-    m_ui.set_read_noise_button->setEnabled(true);
-    m_ui.set_shot_noise_button->setEnabled(true);
+    m_ui.get_all_parameters_button->setEnabled(true);
     m_ui.shot_noise_edit->setEnabled(true);
   }
 }
