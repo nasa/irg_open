@@ -47,6 +47,15 @@ protected slots:
   virtual void onReadNoiseFocusChange(bool hasFocus);
   virtual void onShotNoiseFocusChange(bool hasFocus);
 
+  // Responses to finishing editing (entering RETURN and/or leaving the control)
+  virtual void onADCEditingFinished();
+  virtual void onEnergyConversionEditingFinished();
+  virtual void onExposureEditingFinished();
+  virtual void onGainEditingFinished();
+  virtual void onGammaEditingFinished();
+  virtual void onReadNoiseEditingFinished();
+  virtual void onShotNoiseEditingFinished();
+
 protected:
   void addCamera(const QString& cameraName);
   void displayError(const QString& errorMsg, QString detailedInfo = "");

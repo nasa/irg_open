@@ -12,11 +12,10 @@ public:
   ~CustomLineEdit() = default;
 
 signals:
-  void focussed(bool hasFocus);
+  void focusChanged(bool hasFocus);
 
 protected:
   virtual void focusInEvent(QFocusEvent *e);
-  virtual void focusOutEvent(QFocusEvent *e);
 };
 
 #endif // irg_rqt_tools_CustomLineEdit_h

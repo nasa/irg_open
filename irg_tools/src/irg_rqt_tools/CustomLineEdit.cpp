@@ -8,11 +8,5 @@ CustomLineEdit::CustomLineEdit(QWidget *parent)
 void CustomLineEdit::focusInEvent(QFocusEvent *e)
 {
   QLineEdit::focusInEvent(e);
-  emit(focussed(true));
-}
-
-void CustomLineEdit::focusOutEvent(QFocusEvent *e)
-{
-  QLineEdit::focusOutEvent(e);
-  emit(focussed(false));
+  emit(focusChanged(true));
 }

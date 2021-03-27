@@ -95,13 +95,22 @@ void CameraConfig::initPlugin(qt_gui_cpp::PluginContext& context)
   connect(m_ui.refresh_cameras_button, SIGNAL(clicked()), this, SLOT(onRefreshCamerasClicked()));
   connect(m_ui.restore_defaults_button, SIGNAL(clicked()),  this, SLOT(onRestoreDefaultsClicked()));
   connect(m_ui.get_all_parameters_button, SIGNAL(clicked()),  this, SLOT(onGetAllParametersClicked()));
-  connect(m_ui.adc_bits_edit, SIGNAL(focussed(bool)), this, SLOT(onADCFocusChange(bool)));
-  connect(m_ui.energy_conversion_edit, SIGNAL(focussed(bool)), this, SLOT(onEnergyConversionFocusChange(bool)));
-  connect(m_ui.exposure_edit, SIGNAL(focussed(bool)), this, SLOT(onExposureFocusChange(bool)));
-  connect(m_ui.gain_edit, SIGNAL(focussed(bool)), this, SLOT(onGainFocusChange(bool)));
-  connect(m_ui.gamma_edit, SIGNAL(focussed(bool)), this, SLOT(onGammaFocusChange(bool)));
-  connect(m_ui.read_noise_edit, SIGNAL(focussed(bool)), this, SLOT(onReadNoiseFocusChange(bool)));
-  connect(m_ui.shot_noise_edit, SIGNAL(focussed(bool)), this, SLOT(onShotNoiseFocusChange(bool)));
+
+  connect(m_ui.adc_bits_edit, SIGNAL(focusChanged(bool)), this, SLOT(onADCFocusChange(bool)));
+  connect(m_ui.energy_conversion_edit, SIGNAL(focusChanged(bool)), this, SLOT(onEnergyConversionFocusChange(bool)));
+  connect(m_ui.exposure_edit, SIGNAL(focusChanged(bool)), this, SLOT(onExposureFocusChange(bool)));
+  connect(m_ui.gain_edit, SIGNAL(focusChanged(bool)), this, SLOT(onGainFocusChange(bool)));
+  connect(m_ui.gamma_edit, SIGNAL(focusChanged(bool)), this, SLOT(onGammaFocusChange(bool)));
+  connect(m_ui.read_noise_edit, SIGNAL(focusChanged(bool)), this, SLOT(onReadNoiseFocusChange(bool)));
+  connect(m_ui.shot_noise_edit, SIGNAL(focusChanged(bool)), this, SLOT(onShotNoiseFocusChange(bool)));
+
+  connect(m_ui.adc_bits_edit, SIGNAL(editingFinished()), this, SLOT(onADCEditingFinished()));
+  connect(m_ui.energy_conversion_edit, SIGNAL(editingFinished()), this, SLOT(onEnergyConversionEditingFinished()));
+  connect(m_ui.exposure_edit, SIGNAL(editingFinished()), this, SLOT(onExposureEditingFinished()));
+  connect(m_ui.gain_edit, SIGNAL(editingFinished()), this, SLOT(onGainEditingFinished()));
+  connect(m_ui.gamma_edit, SIGNAL(editingFinished()), this, SLOT(onGammaEditingFinished()));
+  connect(m_ui.read_noise_edit, SIGNAL(editingFinished()), this, SLOT(onReadNoiseEditingFinished()));
+  connect(m_ui.shot_noise_edit, SIGNAL(editingFinished()), this, SLOT(onShotNoiseEditingFinished()));
 
   context.addWidget(m_widget.get());
   updateCameraList();
@@ -250,6 +259,41 @@ void CameraConfig::onReadNoiseFocusChange(bool hasFocus)
 void CameraConfig::onShotNoiseFocusChange(bool hasFocus)
 {
   updateLineEdit(m_nameShotNoise, m_ui.shot_noise_edit, hasFocus);
+}
+
+void CameraConfig::onADCEditingFinished()
+{
+  updateLineEdit(m_nameADCBits, m_ui.adc_bits_edit, false);
+}
+
+void CameraConfig::onEnergyConversionEditingFinished()
+{
+  updateLineEdit(m_nameEnergyConversion, m_ui.energy_conversion_edit, false);
+}
+
+void CameraConfig::onExposureEditingFinished()
+{
+  updateLineEdit(m_nameExposure, m_ui.exposure_edit, false);
+}
+
+void CameraConfig::onGainEditingFinished()
+{
+  updateLineEdit(m_nameGain, m_ui.gain_edit, false);
+}
+
+void CameraConfig::onGammaEditingFinished()
+{
+  updateLineEdit(m_nameGamma, m_ui.gamma_edit, false);
+}
+
+void CameraConfig::onReadNoiseEditingFinished()
+{
+  updateLineEdit(m_nameReadNoise, m_ui.read_noise_edit, false);
+}
+
+void CameraConfig::onShotNoiseEditingFinished()
+{
+  updateLineEdit(m_nameShotNoise, m_ui.shot_noise_edit, false);
 }
 
 void CameraConfig::addCamera(const QString& cameraName)
