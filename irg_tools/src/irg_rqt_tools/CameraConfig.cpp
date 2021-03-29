@@ -198,10 +198,10 @@ void CameraConfig::onGetAllParametersClicked()
 void CameraConfig::stripTrailingZeros(QString& s)
 {
   // Strip any trailing 0s, except for the last one
-  while (s.back() =='0') {
+  while (!s.isEmpty() && s[s.size()] =='0') {
     s.chop(1);
   }
-  if (s.back() =='.') {
+  if (!s.isEmpty() && s[s.size()] =='.') {
     s.append('0');
   }
 }
