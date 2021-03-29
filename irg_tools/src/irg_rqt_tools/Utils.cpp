@@ -1,9 +1,11 @@
 #include "Utils.h"
-#include "rclcpp/rclcpp.hpp"
+
+#include <vector>
 
 using namespace irg_rqt_tools;
   
-QStringList Utils::getAllTopics(rclcpp::Node::SharedPtr node, const QString& messageType)
+QStringList
+Utils::getAllTopics(rclcpp::Node::SharedPtr node, const QString& messageType)
 {
   QStringList topics;
   auto name_type_map = node->get_topic_names_and_types();
@@ -18,4 +20,19 @@ QStringList Utils::getAllTopics(rclcpp::Node::SharedPtr node, const QString& mes
   }
 
   return topics;
+}
+
+QStringList
+Utils::findMatchingNodeNames(rclcpp::Node::SharedPtr node, const std::string& regexStr)
+{
+  QStringList filtered;
+  auto node_names = node->get_node_names();
+
+  for (auto &name : node_names) {
+    if (regex_match(name, std::regex(regexStr))) {
+      filtered.append(QString::fromStdString(name));
+    }
+  }
+
+  return filtered;
 }
