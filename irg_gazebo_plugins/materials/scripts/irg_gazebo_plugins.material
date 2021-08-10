@@ -21,6 +21,7 @@ fragment_program IRGCameraSimFS glsl
   default_params
   {
     param_named RT int 0
+    param_named lens_cap_transmission float 1.0
     param_named exposure float 1.0
     param_named gamma float 1.0
     param_named energy_conversion float 1.0
