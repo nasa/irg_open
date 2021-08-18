@@ -46,7 +46,7 @@ uniform sampler2D RT;
 // Ogre::GpuProgramParameters::setNamedConstant()
 
 // Lens cap effects
-uniform float lens_cap_transmission;
+uniform float lens_transmission;
 
 // Exposure (shutter time) and gamma curve
 uniform float exposure;
@@ -154,8 +154,8 @@ void main()
 {
   vec4 color = texture2D(RT, gl_TexCoord[0].xy);
   
-  // lens cap transmissivity
-  color.rgb *= vec3(lens_cap_transmission);
+  // lens transmissivity
+  color.rgb *= vec3(lens_transmission);
 
   // exposure
   color.rgb *= vec3(exposure);
