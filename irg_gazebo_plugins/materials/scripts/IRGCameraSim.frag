@@ -45,6 +45,9 @@ uniform sampler2D RT;
 // Other parameters are set in C++, via
 // Ogre::GpuProgramParameters::setNamedConstant()
 
+// Lens cap effects
+uniform float lens_transmission;
+
 // Exposure (shutter time) and gamma curve
 uniform float exposure;
 uniform float gamma;
@@ -150,6 +153,9 @@ vec3 downsample(vec3 color, float power_of_two)
 void main()
 {
   vec4 color = texture2D(RT, gl_TexCoord[0].xy);
+  
+  // lens transmissivity
+  color.rgb *= vec3(lens_transmission);
 
   // exposure
   color.rgb *= vec3(exposure);
