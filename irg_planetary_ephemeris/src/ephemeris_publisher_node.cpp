@@ -262,7 +262,7 @@ main(int argc, char *argv[])
   else
     publishPeriod = 5; // The default period
   RCLCPP_INFO(nodeHandle->get_logger(),
-              "Setting publish period to ", publishPeriod);
+              "Setting publish period to %d", publishPeriod);
 
   rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr sun_visibility_pub =
       nodeHandle->create_publisher<std_msgs::msg::Float64>("sun_visibility", 1);
@@ -304,8 +304,8 @@ main(int argc, char *argv[])
     if (current_time.nanoseconds() < 400000000000) // An arbitrary time far from 0!
     {
       RCLCPP_ERROR_SKIPFIRST(nodeHandle->get_logger(),
-                             "Got low value for ros::Time::now() in the solar frame publisher: ",
-                             current_time);
+                             "Got low value for ros::Time::now() in the solar frame publisher: %.3f",
+                             current_time.seconds());
       sleep(3); // Wait to see if a valid time is published
     }
     else
