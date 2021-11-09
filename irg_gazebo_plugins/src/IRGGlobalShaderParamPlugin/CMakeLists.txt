@@ -21,18 +21,16 @@ add_library(${TARGET_NAME} SHARED
   ${SOURCES}
 )
 
+rosidl_get_typesupport_target(cpp_typesupport_target "${PROJECT_NAME}" "rosidl_typesupport_cpp")
+
 target_link_libraries(${TARGET_NAME}
   ${GAZEBO_LIBRARIES}
   ${rclcpp_LIBRARIES}
+  ${cpp_typesupport_target}
 )
 
 ament_target_dependencies(${TARGET_NAME} "gazebo_ros")
 set_target_properties(${TARGET_NAME} PROPERTIES COMPILE_FLAGS "${GAZEBO_CXX_FLAGS}")
-
-## because we're using custom ros message
-#add_dependencies(${TARGET_NAME}  ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
-
-rosidl_target_interfaces(${TARGET_NAME} ${PROJECT_NAME} "rosidl_typesupport_cpp")
 
 install(TARGETS ${TARGET_NAME}
   LIBRARY DESTINATION lib
