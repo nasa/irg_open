@@ -22,6 +22,11 @@ target_link_libraries(${TARGET_NAME}
   ${GAZEBO_LIBRARIES}
   ${rclcpp_LIBRARIES}
 )
+if(ENABLE_PROFILER)
+  target_link_libraries(${TARGET_NAME}
+    ${ignition-common3_LIBRARIES}
+  )
+endif()
 
 ament_target_dependencies(${TARGET_NAME} tf2_ros )
 set_target_properties(${TARGET_NAME} PROPERTIES COMPILE_FLAGS "${GAZEBO_CXX_FLAGS}")

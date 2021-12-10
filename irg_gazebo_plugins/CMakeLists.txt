@@ -27,6 +27,17 @@ include_directories(SYSTEM "${Qt5Xml_INCLUDE_DIRS}")
 set(QT_QTXML_LIBRARY Qt5::Xml)
 set(QT_QTCORE_LIBRARY Qt5::Widgets)
 
+option(ENABLE_PROFILER "Enable/disable Ignition Profiler" OFF)
+if(ENABLE_PROFILER)
+  find_package(ignition-common3 COMPONENTS profiler)
+  if(ignition-common3_FOUND)
+    add_definitions("-DIGN_PROFILER_ENABLE=1" "-DIGN_PROFILER_REMOTERY=1")
+    message(STATUS "Profiler is active")
+  else()
+    message(WARNING "Can't find Ignition common3. Profiler will not be actived")
+  endif()
+endif()
+
 # mallan: add plugins env
 ament_environment_hooks(${CMAKE_CURRENT_SOURCE_DIR}/env-hooks/65.irg_gazebo_plugins.dsv.in)
 
