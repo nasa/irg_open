@@ -6,6 +6,10 @@
 #include <gazebo/physics/Model.hh>
 #include <gazebo/physics/Link.hh>
 
+#ifdef IGN_PROFILER_ENABLE
+#include <ignition/common/Profiler.hh>
+#endif
+
 using namespace irg;
 using namespace std;
 using namespace gazebo;
@@ -61,6 +65,10 @@ void CelestialBodyPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf)
 
 void CelestialBodyPlugin::OnUpdate()
 {
+#ifdef IGN_PROFILER_ENABLE
+  IGN_PROFILE("CelestialBodyPlugin::OnUpdate");
+#endif
+
   // Only continue if a second has elapsed
   if (m_timer.GetElapsed().Double() < 1.0)
   {
