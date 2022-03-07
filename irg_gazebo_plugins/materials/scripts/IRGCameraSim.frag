@@ -90,7 +90,7 @@ float rand(vec2 co)
     return r;
 }
 
-vec4 gaussrand(float I, vec2 co, float num_bits)
+vec4 gaussrand(float I, vec2 co, float integer_limit)
 {
   // Box-Muller method for sampling from the normal distribution
   // http://en.wikipedia.org/wiki/Normal_distribution#Generating_values_from_normal_distribution
@@ -114,21 +114,21 @@ vec4 gaussrand(float I, vec2 co, float num_bits)
   //Z = Z * stddev + mean;
 
   // Shot noise standard deviation is some constant times the square root of
-  // pixel intensity (intensity in units of bits).
-  float shot_noise_std_dev_squared = shot_noise_coeff * shot_noise_coeff * I * num_bits;
+  // integer pixel intensity.
+  float shot_noise_std_dev_squared = shot_noise_coeff * shot_noise_coeff * I * integer_limit;
   // Because standard deviations here are measured in bits. The final stddev is
   // divided by the total number of bits to put it in the range {0, 1}
-  float stddev = sqrt(read_noise_std_dev * read_noise_std_dev + shot_noise_std_dev_squared) / num_bits;
+  float stddev = sqrt(read_noise_std_dev * read_noise_std_dev + shot_noise_std_dev_squared) / integer_limit;
   Z = Z * stddev;
 
   // Return it as a vec4, to be added to the input ("true") color.
   return vec4(Z, Z, Z, 0.0);
 }
 
-vec3 downsample(vec3 color, float num_bits)
+vec3 downsample(vec3 color, float integer_limit)
 {
-  vec3 num_bits_vec = vec3(num_bits);
-  return floor(color * num_bits_vec) / num_bits_vec;
+  vec3 integer_limit_vec = vec3(integer_limit);
+  return floor(color * integer_limit_vec) / integer_limit_vec;
 
   // If you are downsampling to, for example, 5 bits and rendering the final
   // image to an 8-bit framebuffer or texture, you would expect the least
@@ -144,7 +144,7 @@ vec3 downsample(vec3 color, float num_bits)
 
   // An alternative way to downsample the texture would be:
   //
-  // return color * (num_bits / render_target_num_bits);
+  // return color * (integer_limit / render_target_integer_limit);
   //
   // This would cause a smaller range of the final image's possible values to
   // be used. The resulting image would look dark to a human viewer but might
@@ -161,12 +161,13 @@ void main()
   // convert light power to sensor signal
   color.rgb *= vec3(energy_conversion);
 
-  // number of bits per pixel output by camera
-  float num_bits = pow(2.0, adc_bits);
+  // Number of possible values in the final image encoded as integers, or the
+  // analog-to-digital limit.
+  float integer_limit = pow(2.0, adc_bits);
 
   // luminance noise
   float gray = dot(color.rgb, vec3(0.299, 0.587, 0.114));
-  color.rgb += vec3(gaussrand(gray, gl_TexCoord[0].xy, num_bits));
+  color.rgb += vec3(gaussrand(gray, gl_TexCoord[0].xy, integer_limit));
 
   // sensor gain
   color.rgb *= vec3(gain);
@@ -179,6 +180,6 @@ void main()
   color.rgb = pow(color.rgb, vec3(gamma));
 
   // downsample to simulate camera's analog-to-digital converter
-  gl_FragColor = vec4(downsample(color.rgb, num_bits), color.a);
+  gl_FragColor = vec4(downsample(color.rgb, integer_limit), color.a);
 }
 
