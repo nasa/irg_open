@@ -25,8 +25,8 @@ CameraCompositorListener::CameraCompositorListener(sdf::ElementPtr sdf)
   // Declare shader param names and default values
   initParam("exposure", 1.0);
   initParam("energy_conversion", 1.0);
-  initParam("read_noise", 0.64);
-  initParam("shot_noise", 0.09);
+  initParam("read_noise_std_dev", 0.8);
+  initParam("shot_noise_coeff", 0.3);
   initParam("gain", 1.0);
   initParam("gamma", 1.0);
   initParam("adc_bits", 12.0);
