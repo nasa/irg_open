@@ -63,7 +63,7 @@ The plugins can be initialized with user-defined values using the following para
  - `<topic_uid>` - Changes topic from `/gazebo/plugins/camera_sim/<topic>` to `/gazebo/plugins/camera_sim/<topic_uid>/<topic>`.
  - `<exposure>` - Exposure time (seconds). Default = 1.0
  - `<energy_conversion>` - Pixel value in range {0.0, 1.0} per lux-second. A conversion factor from luminous energy to normalized sensor output. Default = 1.0
- - `<read_noise_std_dev>` - Read noise standard deviation (in bits). Default = 0.8
+ - `<read_noise_std_dev>` - Read noise standard deviation (in integer pixel value where pixel values are in the range {0, 2<sup>adc_bits</sup> - 1}). Default = 0.8
  - `<shot_noise_coeff>` - Shot noise coefficient (unitless). Default = 0.3
  - `<gain>` - Simulate sensor gain by multiplying 16-bit version of exposed image by this value. Default = 1.0
  - `<gamma>` - Curve final image by this power. Default = 1.0
@@ -138,11 +138,12 @@ std_dev = sqrt(read_noise_std_dev ^ 2 + shot_noise_std_dev ^ 2)
 ```
 
 where I is the image intensity at a given pixel in the range
-{0, 2<sup>adc_bits</sup>}. `std_dev` is the standard deviation used to choose a
-random Gaussian offset for that pixel. Note that the inputs `read_noise_std_dev`
-and `shot_noise_coeff` affect the number of bits of noise to apply to each
-pixel, and so they are coupled with your choice of `adc_bits`. Decreasing
-`adc_bits` will increase the visual impact of noise.
+{0, 2<sup>adc_bits</sup> - 1}. `std_dev` is the standard deviation used to
+choose a random Gaussian offset for that pixel. Note that the inputs
+`read_noise_std_dev` and `shot_noise_coeff` affect the level of noise to apply
+to each pixel in the same image intensity range, and so they are coupled with
+your choice of `adc_bits`. Decreasing `adc_bits` will increase the visual impact
+of noise.
 
 ### Analog-to-digital converter
 The voltages coming out of a digital camera's sensor must be converted to a

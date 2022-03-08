@@ -60,7 +60,8 @@ uniform vec3 offsets;
 // Standard deviation of the Gaussian distribution that we want to sample from.
 //uniform float stddev;
 
-// Read noise standard deviation (in bits)
+// Read noise standard deviation (in integer pixel value where pixel values are
+// in the range {0, 2^adc_bits - 1} )
 uniform float read_noise_std_dev;
 
 // Shot noise coefficient (unitless)
