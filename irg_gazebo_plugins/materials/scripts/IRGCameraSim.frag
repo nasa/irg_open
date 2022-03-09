@@ -61,7 +61,7 @@ uniform vec3 offsets;
 //uniform float stddev;
 
 // Read noise standard deviation (in integer pixel value where pixel values are
-// in the range {0, 2^adc_bits - 1} )
+// in the interval [0, 2^adc_bits - 1] )
 uniform float read_noise_std_dev;
 
 // Shot noise coefficient (unitless)
@@ -117,8 +117,8 @@ vec4 gaussrand(float I, vec2 co, float integer_limit)
   // Shot noise standard deviation is some constant times the square root of
   // integer pixel intensity.
   float shot_noise_std_dev_squared = shot_noise_coeff * shot_noise_coeff * I * integer_limit;
-  // Because standard deviations here are measured in integers. The final stddev
-  // is divided by the integer limit to put it in the floating point range {0.0, 1.0}
+  // Because standard deviations here are measured in integers, the final stddev
+  // is divided by the integer limit to put it in the floating point interval [0.0, 1.0]
   float stddev = sqrt(read_noise_std_dev * read_noise_std_dev + shot_noise_std_dev_squared) / integer_limit;
   Z = Z * stddev;
 
