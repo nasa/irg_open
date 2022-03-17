@@ -3,18 +3,6 @@ vertex_program IRGOneTextureVS glsl
   source IRGOneTexture.vert
 }
 
-fragment_program IRGCameraNoiseFS glsl
-{
-  source IRGCameraNoise.frag
-  default_params
-  {
-    param_named RT int 0
-    param_named read_noise float 0.64
-    param_named shot_noise float 0.09
-    param_named offsets float3 0.0 0.0 0.0
-  }
-}
-
 fragment_program IRGCameraSimFS glsl
 {
   source IRGCameraSim.frag
@@ -29,25 +17,6 @@ fragment_program IRGCameraSimFS glsl
     param_named offsets float3 0.0 0.0 0.0
     param_named gain float 1.0
     param_named adc_bits float 12.0
-  }
-}
-
-material IRGCameraNoisePlugin
-{
-  technique
-  {
-    pass
-    {
-      vertex_program_ref IRGOneTextureVS { }
-      fragment_program_ref IRGCameraNoiseFS { }
-
-      texture_unit RT
-      {
-        tex_coord_set 0
-        tex_address_mode clamp
-        filtering linear linear linear
-      }
-    }
   }
 }
 
