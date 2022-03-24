@@ -42,7 +42,8 @@ void CameraSimVisualPlugin::Load(rendering::VisualPtr visual, sdf::ElementPtr sd
   m_camera = scene->GetUserCamera(0);
   if (m_camera == nullptr)
   {
-    gzerr << "Camera is null. CameraSimVisualPlugin won't load." << std::endl;
+    // No error is printed here. Finding a camera is expected behavior for a
+    // VisualPlugin running on gzclient but not on gzserver.
     return;
   }
 
