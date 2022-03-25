@@ -38,6 +38,12 @@ void CameraSimVisualPlugin::Load(rendering::VisualPtr visual, sdf::ElementPtr sd
     return;
   }
 
+  // This plugin is intended only for gzclient's UserCamera and not for gzserver
+  if (scene->IsServer())
+  {
+    return;
+  }
+
   // Should this handle multiple user cameras? In what cases are there more than one?
   m_camera = scene->GetUserCamera(0);
   if (m_camera == nullptr)
