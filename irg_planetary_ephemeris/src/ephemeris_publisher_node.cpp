@@ -26,6 +26,7 @@
 using namespace std;
 using namespace ow;
 
+double timeOffset = 0; // global
 
 static void
 check_ros_environment()
@@ -118,9 +119,13 @@ broadcast_transforms(tf2_ros::TransformBroadcaster broadcaster,
 		     const float64_ow elev,
 		     const vector<string> &target_bodies,
 		     const ros::Time &ros_time,
+		     const double& offset,
 		     Ephemeris &ephemeris)
 {
+  ros::Time ros_time_offset = ros_time + ros::Duration(offset);
+
   string time_string = ros_time_to_string(ros_time);
+  string time_string_offset = ros_time_to_string(ros_time_offset);
 
   int sun_index = -1;
 
@@ -129,7 +134,7 @@ broadcast_transforms(tf2_ros::TransformBroadcaster broadcaster,
     float64_ow spice_transform[16];
 
     ephemeris.SurfaceToTargetBodyTransform(reference_body, lat, lon, elev,
-					   target_bodies[i], time_string,
+					   target_bodies[i], time_string_offset, // time offset!
 					   spice_transform);
 
     geometry_msgs::TransformStamped time_stamped_transform_msg =
@@ -360,6 +365,13 @@ read_ros_run_parameters(string &reference_body,
   return true;
 }
 
+void timeOffsetCallback(const std_msgs::Float64::ConstPtr& msg)
+{
+   timeOffset = msg->data;
+   //std::cout << "timeOffset = " << timeOffset << std::endl;
+}
+
+
 int
 main(int argc, char *argv[])
 {
@@ -382,6 +394,8 @@ main(int argc, char *argv[])
   ROS_INFO_STREAM("Setting publish period to " << publishPeriod);
 
   ros::Publisher sun_visibility_pub = nodeHandle.advertise<std_msgs::Float64>("sun_visibility", 1);
+  
+  ros::Subscriber time_offset_sub = nodeHandle.subscribe("ephemeris_time/offset", 10, timeOffsetCallback);
 
   string run_parameters_filename;
   string reference_body;
@@ -430,6 +444,7 @@ main(int argc, char *argv[])
   bool first_error = true;
   ros::Rate publishRate(publishPeriod);
   ROS_INFO_STREAM("Entering broadcasting loop...");
+  timeOffset = 0;
   while (ros::ok())
   {
     // Get the current time and make sure it is reasonable.
@@ -447,8 +462,9 @@ main(int argc, char *argv[])
 
     broadcast_transforms(broadcaster, sun_visibility_pub, reference_body,
                          mission_lat, mission_lon, mission_elev,
-                         target_bodies, current_time, ephemeris);
+                         target_bodies, current_time, timeOffset, ephemeris);
     
+    ros::spinOnce();
     publishRate.sleep();
   }
   
