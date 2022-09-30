@@ -1,31 +1,3 @@
-compositor IRGCameraNoisePlugin
-{
-  technique
-  {
-    // Using a 16-bit temporary texture to simulate a camera sensor.
-    texture rt target_width target_height PF_SHORT_RGB
-
-    target rt
-    {
-      // Render output from previous compositor (or original scene)
-      input previous
-    }
-    target_output
-    {
-      // Start with clear output
-      input none
-
-      // Draw a fullscreen quad with noise
-      pass render_quad
-      {
-        material IRGCameraNoisePlugin
-        input 0 rt
-      }
-    }
-  }
-}
-
-
 compositor IRGCameraSim
 {
   technique

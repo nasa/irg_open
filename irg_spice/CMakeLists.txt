@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.0.2)
 project(irg_spice)
 
 ## Find catkin macros and libraries
@@ -14,7 +14,7 @@ set(BUILD_FOLDER "${CMAKE_BINARY_DIR}")
 
 # Warning: The MD5 will break whenever they update the tarball!
 set(PACKAGE_URL http://naif.jpl.nasa.gov/pub/naif/toolkit/C/PC_Linux_GCC_64bit/packages/cspice.tar.Z)
-set(PACKAGE_MD5 b776166eea01b562466f978754c9d3c7)
+set(PACKAGE_MD5 d7d737e6d70218d333e12795e9a15f7c)
 set(DOWNLOAD_DIR   ${CMAKE_CURRENT_SOURCE_DIR}/tarball)
 set(DOWNLOAD_PATH "${DOWNLOAD_DIR}/cspice.tar.Z")
 message("Downloading file: ${DOWNLOAD_PATH}")

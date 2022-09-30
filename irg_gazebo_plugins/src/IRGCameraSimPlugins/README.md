@@ -46,8 +46,8 @@ There is also a VisualPlugin that can be used within a SDF `<visual>` element.
       <plugin name="CameraSim" filename="libIRGCameraSimVisualPlugin.so" >
         <topic_uid>gui</topic_uid>
         <gamma>0.5</gamma>
-        <read_noise>0.0</read_noise>
-        <shot_noise>0.0</shot_noise>
+        <read_noise_std_dev>0.0</read_noise_std_dev>
+        <shot_noise_coeff>0.0</shot_noise_coeff>
       </plugin>
     </visual>
   </link>
@@ -61,10 +61,10 @@ settled on a VisualPlugin instead.
 ### Parameters
 The plugins can be initialized with user-defined values using the following parameters:
  - `<topic_uid>` - Changes topic from `/gazebo/plugins/camera_sim/<topic>` to `/gazebo/plugins/camera_sim/<topic_uid>/<topic>`.
- - `<exposure>` - Multiply original image by this value. Default = 1.0
- - `<energy_conversion>` - Pixel value per lux-second. A conversion factor from luminous energy to normalized sensor output. Default = 1.0
- - `<read_noise>` - Read noise coefficient. Default = 0.64
- - `<shot_noise>` - Shot noise coefficient. Default = 0.09
+ - `<exposure>` - Exposure time (seconds). Default = 1.0
+ - `<energy_conversion>` - Pixel value per lux-second in the interval [0.0, 1.0]. A conversion factor from luminous energy to normalized sensor output. Default = 1.0
+ - `<read_noise_std_dev>` - Read noise standard deviation (in integer pixel value where pixel values are in the interval [0, 2<sup>adc_bits</sup> - 1] ). Default = 0.8
+ - `<shot_noise_coeff>` - Shot noise coefficient (unitless). Default = 0.3
  - `<gain>` - Simulate sensor gain by multiplying 16-bit version of exposed image by this value. Default = 1.0
  - `<gamma>` - Curve final image by this power. Default = 1.0
  - `<adc_bits>` - Bit depth of camera's analog-to-digital converter. Default = 12
@@ -132,12 +132,18 @@ input image, while Gazebo's default noise is not.
 
 The formula we are using for noise is:
 
-`N = sqrt(read_noise + shot_noise * I)`
+```
+shot_noise_std_dev = shot_noise_coeff ^ 2 * I
+std_dev = sqrt(read_noise_std_dev ^ 2 + shot_noise_std_dev ^ 2)
+```
 
-where I is the image intensity at a given pixel in the range {0, 4095}. The
-first term is a read noise coefficient (default = 0.64), and the second is a
-photon shot noise coefficient (default = 0.09). N is the standard deviation
-used to choose a random value along a normal distribution for that pixel.
+where I is the image intensity at a given pixel in the interval
+[0, 2<sup>adc_bits</sup> - 1]. `std_dev` is the standard deviation used to
+choose a random Gaussian offset for that pixel. Note that the inputs
+`read_noise_std_dev` and `shot_noise_coeff` affect the level of noise to apply
+to each pixel in the same image intensity interval, and so they are coupled with
+your choice of `adc_bits`. Decreasing `adc_bits` will increase the visual impact
+of noise.
 
 ### Analog-to-digital converter
 The voltages coming out of a digital camera's sensor must be converted to a
@@ -149,14 +155,14 @@ depth greater than or equal to that of the adc_bits you set for this plugin. If
 your image format has a smaller bit depth, you will lose desired image detail.
 
 #### Writing final image to texture
-Internally, GLSL shaders keep color values in the range {0.0, 1.0}. When our
-simulated ADC converts to, say, 12-bits, it keeps the color in the range {0.0, 1.0}
-but it uses 4096 distinct values in that range. When this result is written to a
-16-bit render target, it uses 4096 distinct values spread throughout that range
-of 65536 values.
+Internally, GLSL shaders keep color values in the interval [0.0, 1.0]. When our
+simulated ADC converts to, say, 12-bits, it keeps the color in the interval
+[0.0, 1.0] but it uses 4096 distinct values in that interval. When this result
+is written to a 16-bit render target, it uses 4096 distinct values spread
+throughout that interval of 65536 values.
 
-An alternative method would be to write to the *lowest* 4096 values in that range
-of 65536 values. This would require modifying the shader and its inputs.
+An alternative method would be to write to the *lowest* 4096 values in that
+interval of 65536 values. This would require modifying the shader and its inputs.
 
 Both versions of this final image would contain the same amount of information.
 We currently don't know if computer vision algorithms would behave the same or

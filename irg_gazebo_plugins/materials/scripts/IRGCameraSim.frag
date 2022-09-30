@@ -60,11 +60,12 @@ uniform vec3 offsets;
 // Standard deviation of the Gaussian distribution that we want to sample from.
 //uniform float stddev;
 
-// Read noise coefficient
-uniform float read_noise;
+// Read noise standard deviation (in integer pixel value where pixel values are
+// in the interval [0, 2^adc_bits - 1] )
+uniform float read_noise_std_dev;
 
-// Shot noise coefficient
-uniform float shot_noise;
+// Shot noise coefficient (unitless)
+uniform float shot_noise_coeff;
 
 // This is the simplest possible simulation of camera sensor gain (or ISO)
 uniform float gain;
@@ -90,7 +91,7 @@ float rand(vec2 co)
     return r;
 }
 
-vec4 gaussrand(float I, vec2 co)
+vec4 gaussrand(float I, vec2 co, float integer_limit)
 {
   // Box-Muller method for sampling from the normal distribution
   // http://en.wikipedia.org/wiki/Normal_distribution#Generating_values_from_normal_distribution
@@ -113,18 +114,22 @@ vec4 gaussrand(float I, vec2 co)
   // Apply the stddev and mean.
   //Z = Z * stddev + mean;
 
-  // Larry's noise formula
-  float stddev = sqrt(read_noise + shot_noise * I * 4095.0) / 4095.0;
+  // Shot noise standard deviation is some constant times the square root of
+  // integer pixel intensity.
+  float shot_noise_std_dev_squared = shot_noise_coeff * shot_noise_coeff * I * integer_limit;
+  // Because standard deviations here are measured in integers, the final stddev
+  // is divided by the integer limit to put it in the floating point interval [0.0, 1.0]
+  float stddev = sqrt(read_noise_std_dev * read_noise_std_dev + shot_noise_std_dev_squared) / integer_limit;
   Z = Z * stddev;
 
   // Return it as a vec4, to be added to the input ("true") color.
   return vec4(Z, Z, Z, 0.0);
 }
 
-vec3 downsample(vec3 color, float power_of_two)
+vec3 downsample(vec3 color, float integer_limit)
 {
-  vec3 power_of_two_vec = vec3(power_of_two);
-  return floor(color * power_of_two_vec) / power_of_two_vec;
+  vec3 integer_limit_vec = vec3(integer_limit);
+  return floor(color * integer_limit_vec) / integer_limit_vec;
 
   // If you are downsampling to, for example, 5 bits and rendering the final
   // image to an 8-bit framebuffer or texture, you would expect the least
@@ -136,11 +141,11 @@ vec3 downsample(vec3 color, float power_of_two)
   //
   // This would require the user to pass render_target_bit_depth to this shader
   // as a uniform. We don't yet know if this kind of exactness is necessary, so
-  // we haven't don it yet.
+  // we haven't done it yet.
 
   // An alternative way to downsample the texture would be:
   //
-  // return color * (power_of_two / render_target_bit_depth_power_of_two);
+  // return color * (integer_limit / render_target_integer_limit);
   //
   // This would cause a smaller range of the final image's possible values to
   // be used. The resulting image would look dark to a human viewer but might
@@ -157,9 +162,13 @@ void main()
   // convert light power to sensor signal
   color.rgb *= vec3(energy_conversion);
 
+  // Number of possible values in the final image encoded as integers, or the
+  // analog-to-digital limit.
+  float integer_limit = pow(2.0, adc_bits);
+
   // luminance noise
   float gray = dot(color.rgb, vec3(0.299, 0.587, 0.114));
-  color.rgb += vec3(gaussrand(gray, gl_TexCoord[0].xy));
+  color.rgb += vec3(gaussrand(gray, gl_TexCoord[0].xy, integer_limit));
 
   // sensor gain
   color.rgb *= vec3(gain);
@@ -172,7 +181,6 @@ void main()
   color.rgb = pow(color.rgb, vec3(gamma));
 
   // downsample to simulate camera's analog-to-digital converter
-  float power_of_two = pow(2.0, adc_bits);
-  gl_FragColor = vec4(downsample(color.rgb, power_of_two), color.a);
+  gl_FragColor = vec4(downsample(color.rgb, integer_limit), color.a);
 }
 

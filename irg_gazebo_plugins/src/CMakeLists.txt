@@ -1,4 +1,3 @@
-add_subdirectory(IRGCameraNoisePlugin)
 add_subdirectory(IRGCameraSimPlugins)
 add_subdirectory(IRGCelestialBodyPlugin)
 add_subdirectory(IRGGlobalShaderParamPlugin)
