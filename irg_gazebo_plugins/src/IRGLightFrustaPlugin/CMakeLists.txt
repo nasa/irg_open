@@ -8,11 +8,6 @@ set (SOURCES
   LightFrustaPlugin.cpp
 )
 
-include_directories(
-  ${GAZEBO_INCLUDE_DIRS}
-  ${rclcpp_INCLUDE_DIRS}
-)
-
 add_library(${TARGET_NAME} SHARED 
   ${HEADERS}
   ${SOURCES}
@@ -20,7 +15,6 @@ add_library(${TARGET_NAME} SHARED
 
 target_link_libraries(${TARGET_NAME}
   ${GAZEBO_LIBRARIES}
-  ${rclcpp_LIBRARIES}
 )
 set_target_properties(${TARGET_NAME} PROPERTIES COMPILE_FLAGS "${GAZEBO_CXX_FLAGS}")
 

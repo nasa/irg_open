@@ -8,12 +8,6 @@ set (SOURCES
   NearFarClipPlugin.cpp
 )
 
-include_directories(
-  ${rclcpp_INCLUDE_DIRS}
-  ${GAZEBO_INCLUDE_DIRS}
-  ${roscpp_INCLUDE_DIRS}
-)
-
 add_library(${TARGET_NAME} SHARED 
   ${HEADERS}
   ${SOURCES}
@@ -21,7 +15,10 @@ add_library(${TARGET_NAME} SHARED
 
 target_link_libraries(${TARGET_NAME}
   ${GAZEBO_LIBRARIES}
-  ${rclcpp_LIBRARIES}
+  ${QT_QTCORE_LIBRARY}
+)
+ament_target_dependencies(${TARGET_NAME}
+  rclcpp
 )
 set_target_properties(${TARGET_NAME} PROPERTIES COMPILE_FLAGS "${GAZEBO_CXX_FLAGS}")
 

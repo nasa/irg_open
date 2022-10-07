@@ -10,23 +10,19 @@ set (SOURCES
   CubemapFilter.cpp
 )
 
-find_package(GLEW REQUIRED)
-
-include_directories(
-  ${GAZEBO_INCLUDE_DIRS}
-  ${rclcpp_INCLUDE_DIRS}
-  ${std_msgs_INCLUDE_DIRS}
-)
-
 add_library(${TARGET_NAME} SHARED 
   ${HEADERS}
   ${SOURCES}
 )
-
 target_link_libraries(${TARGET_NAME}
   ${GAZEBO_LIBRARIES}
-  ${rclcpp_LIBRARIES}
+  ${OPENGL_LIBRARIES}
   ${GLEW_LIBRARIES}
+  ${OGRE_RenderSystem_GL_LIBRARIES}
+)
+ament_target_dependencies(${TARGET_NAME}
+  rclcpp
+  std_msgs
 )
 set_target_properties(${TARGET_NAME} PROPERTIES COMPILE_FLAGS "${GAZEBO_CXX_FLAGS}")
 

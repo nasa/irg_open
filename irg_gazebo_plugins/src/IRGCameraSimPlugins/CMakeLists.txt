@@ -1,12 +1,5 @@
 set(TARGET_NAME IRGCameraSim)
 
-find_package(gazebo_ros REQUIRED)
-
-include_directories(
-  ${rclcpp_INCLUDE_DIRS}
-  ${GAZEBO_INCLUDE_DIRS}
-)
-
 add_library(${TARGET_NAME}SensorPlugin SHARED 
   CameraCompositor.h
   CameraCompositorListener.h
@@ -25,12 +18,20 @@ add_library(${TARGET_NAME}VisualPlugin SHARED
   CameraSimVisualPlugin.cpp
 )
 
-ament_target_dependencies(${TARGET_NAME}SensorPlugin "std_msgs" "gazebo_ros")
-target_link_libraries(${TARGET_NAME}SensorPlugin ${roscpp_LIBRARIES} ${GAZEBO_LIBRARIES})
+ament_target_dependencies(${TARGET_NAME}SensorPlugin
+  gazebo_ros
+  rclcpp
+  std_msgs
+)
+target_link_libraries(${TARGET_NAME}SensorPlugin ${GAZEBO_LIBRARIES})
 set_target_properties(${TARGET_NAME}SensorPlugin PROPERTIES COMPILE_FLAGS "${GAZEBO_CXX_FLAGS}")
 
-ament_target_dependencies(${TARGET_NAME}VisualPlugin "std_msgs" "gazebo_ros")
-target_link_libraries(${TARGET_NAME}VisualPlugin ${roscpp_LIBRARIES} ${GAZEBO_LIBRARIES})
+ament_target_dependencies(${TARGET_NAME}VisualPlugin
+  gazebo_ros
+  rclcpp
+  std_msgs
+)
+target_link_libraries(${TARGET_NAME}VisualPlugin ${GAZEBO_LIBRARIES})
 set_target_properties(${TARGET_NAME}VisualPlugin PROPERTIES COMPILE_FLAGS "${GAZEBO_CXX_FLAGS}")
 
 install(TARGETS
