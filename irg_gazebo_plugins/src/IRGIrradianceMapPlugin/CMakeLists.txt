@@ -10,7 +10,10 @@ set (SOURCES
   CubemapFilter.cpp
 )
 
-add_library(${TARGET_NAME} SHARED 
+# Hack the path to the library, since 'find_library' fails to find it
+set(_ogre_render_system_gl_lib "${OGRE_PLUGIN_DIR}/RenderSystem_GL.so")
+
+add_library(${TARGET_NAME} SHARED
   ${HEADERS}
   ${SOURCES}
 )
@@ -18,7 +21,7 @@ target_link_libraries(${TARGET_NAME}
   ${GAZEBO_LIBRARIES}
   ${OPENGL_LIBRARIES}
   ${GLEW_LIBRARIES}
-  ${OGRE_RenderSystem_GL_LIBRARIES}
+  ${_ogre_render_system_gl_lib}
 )
 ament_target_dependencies(${TARGET_NAME}
   rclcpp
