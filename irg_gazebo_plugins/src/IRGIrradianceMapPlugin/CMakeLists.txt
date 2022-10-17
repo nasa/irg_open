@@ -10,7 +10,9 @@ set (SOURCES
   CubemapFilter.cpp
 )
 
-# Hack the path to the library, since 'find_library' fails to find it
+# Hack the path to the library, since 'find_library' fails to find it.
+# Although the Ogre RenderSystem is nominally intended to be abstracted away
+# from the user, this plugin uses Ogre::GLTexture directly.
 set(_ogre_render_system_gl_lib "${OGRE_PLUGIN_DIR}/RenderSystem_GL.so")
 
 add_library(${TARGET_NAME} SHARED
