@@ -14,6 +14,7 @@ find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(gazebo REQUIRED)
 find_package(gazebo_ros REQUIRED)
+find_package(GLEW REQUIRED)
 find_package(OGRE REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
