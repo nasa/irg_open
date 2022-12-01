@@ -1,10 +1,5 @@
 set(TARGET_NAME IRGShadowParameters)
 
-include_directories(
-  ${rclcpp_INCLUDE_DIRS}
-  ${GAZEBO_INCLUDE_DIRS}
-)
-
 add_library(${TARGET_NAME}SensorPlugin SHARED 
   ShadowParametersPluginBase.h
   ShadowParametersSensorPlugin.h
@@ -21,9 +16,11 @@ add_library(${TARGET_NAME}VisualPlugin SHARED
 
 target_link_libraries(${TARGET_NAME}SensorPlugin ${GAZEBO_LIBRARIES})
 set_target_properties(${TARGET_NAME}SensorPlugin PROPERTIES COMPILE_FLAGS "${GAZEBO_CXX_FLAGS}")
+ament_target_dependencies(${TARGET_NAME}SensorPlugin rclcpp)
 
 target_link_libraries(${TARGET_NAME}VisualPlugin ${GAZEBO_LIBRARIES})
 set_target_properties(${TARGET_NAME}VisualPlugin PROPERTIES COMPILE_FLAGS "${GAZEBO_CXX_FLAGS}")
+ament_target_dependencies(${TARGET_NAME}VisualPlugin rclcpp)
 
 install(TARGETS
   ${TARGET_NAME}SensorPlugin

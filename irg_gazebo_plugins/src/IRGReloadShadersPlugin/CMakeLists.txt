@@ -8,12 +8,6 @@ set (SOURCES
   ReloadShadersPlugin.cpp
 )
 
-include_directories(
-  ${rclcpp_INCLUDE_DIRS}
-  ${GAZEBO_INCLUDE_DIRS}
-  ${std_msgs_INCLUDE_DIRS}
-)
-
 add_library(${TARGET_NAME} SHARED 
   ${HEADERS}
   ${SOURCES}
@@ -21,7 +15,9 @@ add_library(${TARGET_NAME} SHARED
 
 target_link_libraries(${TARGET_NAME}
   ${GAZEBO_LIBRARIES}
-  ${roscpp_LIBRARIES}
+)
+ament_target_dependencies(${TARGET_NAME}
+  rclcpp
 )
 set_target_properties(${TARGET_NAME} PROPERTIES COMPILE_FLAGS "${GAZEBO_CXX_FLAGS}")
 

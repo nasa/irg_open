@@ -10,23 +10,24 @@ set (SOURCES
   CubemapFilter.cpp
 )
 
-find_package(GLEW REQUIRED)
+# Hack the path to the library, since 'find_library' fails to find it.
+# Although the Ogre RenderSystem is nominally intended to be abstracted away
+# from the user, this plugin uses Ogre::GLTexture directly.
+set(_ogre_render_system_gl_lib "${OGRE_PLUGIN_DIR}/RenderSystem_GL.so")
 
-include_directories(
-  ${GAZEBO_INCLUDE_DIRS}
-  ${rclcpp_INCLUDE_DIRS}
-  ${std_msgs_INCLUDE_DIRS}
-)
-
-add_library(${TARGET_NAME} SHARED 
+add_library(${TARGET_NAME} SHARED
   ${HEADERS}
   ${SOURCES}
 )
-
 target_link_libraries(${TARGET_NAME}
   ${GAZEBO_LIBRARIES}
-  ${rclcpp_LIBRARIES}
+  ${OPENGL_LIBRARIES}
   ${GLEW_LIBRARIES}
+  ${_ogre_render_system_gl_lib}
+)
+ament_target_dependencies(${TARGET_NAME}
+  rclcpp
+  std_msgs
 )
 set_target_properties(${TARGET_NAME} PROPERTIES COMPILE_FLAGS "${GAZEBO_CXX_FLAGS}")
 

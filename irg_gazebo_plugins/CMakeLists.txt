@@ -13,8 +13,14 @@ find_package(std_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(gazebo REQUIRED)
+find_package(gazebo_ros REQUIRED)
+find_package(GLEW REQUIRED)
 find_package(OGRE REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
+
+# Set GL preference to quiet build warning
+set(OpenGL_GL_PREFERENCE GLVND)
+find_package(OpenGL REQUIRED)
 
 message(STATUS "FOUND QT 5")
 find_package(Qt5Widgets REQUIRED)
@@ -26,6 +32,10 @@ include_directories(SYSTEM "${Qt5Widgets_INCLUDE_DIRS}")
 include_directories(SYSTEM "${Qt5Xml_INCLUDE_DIRS}")
 set(QT_QTXML_LIBRARY Qt5::Xml)
 set(QT_QTCORE_LIBRARY Qt5::Widgets)
+
+include_directories(
+  ${GAZEBO_INCLUDE_DIRS}
+)
 
 option(ENABLE_PROFILER "Enable/disable Ignition Profiler" OFF)
 if(ENABLE_PROFILER)
@@ -141,9 +151,6 @@ ament_export_dependencies(rclcpp std_msgs rosidl_default_generators rosidl_defau
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 # include_directories(include)
-include_directories(
-  ${rclcpp_INCLUDE_DIRS}
-)
 
 
 add_subdirectory(src)
