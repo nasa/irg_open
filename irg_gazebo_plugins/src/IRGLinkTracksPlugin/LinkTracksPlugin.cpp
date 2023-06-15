@@ -50,7 +50,17 @@ LinkTracksPlugin::~LinkTracksPlugin()
  */
 void LinkTracksPlugin::Load(rendering::VisualPtr _sensor, sdf::ElementPtr _sdf)
 {
-  mRosNode = gazebo_ros::Node::Get(_sdf);
+  // As a visual plugin, this can be loaded in both gzserver and gzclient,
+  // but it is important that each ROS node has a unique name.
+  // Read the default node name from SDFormat:
+  std::string nodeName = _sdf->Get<std::string>("name");
+  // Hack: if the environment variable RMT_PORT == 1501, then this plugin
+  // is loaded by gzclient, so we add a suffix to the ROS node name.
+  char *rmt_port = getenv("RMT_PORT");
+  if (rmt_port && 0 == strncmp(rmt_port, "1501", 4)) {
+    nodeName += "_gui";
+  }
+  mRosNode = gazebo_ros::Node::Get(_sdf, nodeName);
 
   char buf[128];
   std::string param;
