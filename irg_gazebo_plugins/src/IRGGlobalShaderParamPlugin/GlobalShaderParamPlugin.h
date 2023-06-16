@@ -25,7 +25,7 @@ public:
   GlobalShaderParamPlugin();
   ~GlobalShaderParamPlugin();
 
-  virtual void Load(gazebo::rendering::VisualPtr _sensor, sdf::ElementPtr _sdf);
+  virtual void Load(gazebo::rendering::VisualPtr _visual, sdf::ElementPtr _sdf);
 
 protected:
   //void onShaderUpdateMsg(const std_msgs::String::ConstPtr& msg);

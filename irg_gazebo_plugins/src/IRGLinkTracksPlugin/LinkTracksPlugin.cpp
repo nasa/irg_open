@@ -48,17 +48,23 @@ LinkTracksPlugin::~LinkTracksPlugin()
 /**
  * Load values from SDF and setup subscriptions
  */
-void LinkTracksPlugin::Load(rendering::VisualPtr _sensor, sdf::ElementPtr _sdf)
+void LinkTracksPlugin::Load(rendering::VisualPtr _visual, sdf::ElementPtr _sdf)
 {
   // As a visual plugin, this can be loaded in both gzserver and gzclient,
   // but it is important that each ROS node has a unique name.
   // Read the default node name from SDFormat:
   std::string nodeName = _sdf->Get<std::string>("name");
-  // Hack: if the environment variable RMT_PORT == 1501, then this plugin
-  // is loaded by gzclient, so we add a suffix to the ROS node name.
-  char *rmt_port = getenv("RMT_PORT");
-  if (rmt_port && 0 == strncmp(rmt_port, "1501", 4)) {
-    nodeName += "_gui";
+  // Use Scene::IsServer() to determine if this is gzserver or gzclient.
+  // If it's not the server, add a suffix to the ROS node name.
+  auto scene = _visual->GetScene();
+  if (scene) {
+    if (!scene->IsServer()) {
+      nodeName += "_gui";
+    }
+  }
+  else {
+    gzerr << "Unable to get Scene pointer, unable to confirm unique "
+          << "ROS node name." << std::endl;
   }
   mRosNode = gazebo_ros::Node::Get(_sdf, nodeName);
 

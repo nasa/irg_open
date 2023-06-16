@@ -27,7 +27,7 @@ namespace gazebo {
     LinkTracksPlugin();
     ~LinkTracksPlugin();
 
-    virtual void Load(rendering::VisualPtr _sensor, sdf::ElementPtr _sdf);
+    virtual void Load(rendering::VisualPtr _visual, sdf::ElementPtr _sdf);
 
     bool InitTexture();
 
