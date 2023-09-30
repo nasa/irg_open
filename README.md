@@ -1,7 +1,15 @@
+irg_open
+==============================
+This is a repository of tools to be shared across projects. It is open source,
+so do not add anything private or EAR/ITAR restricted. It originated in the
+Intelligent Robotics Group (IRG) at NASA Ames Research Center. Hence the name.
+
 Notices:
 --------
-Copyright © 2020 United States Government as represented by the Administrator of
-the National Aeronautics and Space Administration.  All Rights Reserved.
+
+Copyright © 2020-2023 United States Government as represented by the
+Administrator of the National Aeronautics and Space Administration.
+All Rights Reserved.
 
 Disclaimers
 -----------
@@ -27,11 +35,3 @@ OF THE SUBJECT SOFTWARE, RECIPIENT SHALL INDEMNIFY AND HOLD HARMLESS THE UNITED
 STATES GOVERNMENT, ITS CONTRACTORS AND SUBCONTRACTORS, AS WELL AS ANY PRIOR
 RECIPIENT, TO THE EXTENT PERMITTED BY LAW.  RECIPIENT'S SOLE REMEDY FOR ANY SUCH
 MATTER SHALL BE THE IMMEDIATE, UNILATERAL TERMINATION OF THIS AGREEMENT.
-
-
-irg_open
-==============================
-This is a repository of tools to be shared across projects. It is open source,
-so do not add anything private or EAR/ITAR restricted. It originated in the
-Intelligent Robotics Group (IRG) at NASA Ames Research Center. Hence the name.
-
