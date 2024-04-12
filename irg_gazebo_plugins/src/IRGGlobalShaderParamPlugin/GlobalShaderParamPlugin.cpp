@@ -226,7 +226,7 @@ void GlobalShaderParamPlugin::cacheParams(int8_t shaderType , const std::string&
       }
     }
   }
-  gzmsg << "GlobalShaderParamPlugin::cacheParams(" << paramName.c_str() << ", " << paramsList.size() << ")\n";
+  gzlog << "GlobalShaderParamPlugin::cacheParams(" << paramName.c_str() << ", " << paramsList.size() << ")\n";
 }
 
 
